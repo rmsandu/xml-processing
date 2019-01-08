@@ -8,7 +8,6 @@ import numpy as np
 import AngleNeedles
 from itertools import combinations
 
-
 class ComputeAnglesTrajectories():
 
     def FromTrajectoriesToNeedles(df_patient_data, patientID, Angles):
@@ -18,7 +17,8 @@ class ComputeAnglesTrajectories():
         # recompute the 'LesionNr' just for Validated IRE Angles
         list_lesion_count = []
         needles = df_IREs['NeedleNr'].tolist()
-
+         # TODO: redundant. remove the lesion re-indexing in this function.
+        # TODO: do the lesion re-indexing globally
         k_lesion = 1
         for needle_idx, needle in enumerate(needles):
             if needle_idx == 0:
@@ -48,6 +48,7 @@ class ComputeAnglesTrajectories():
             NeedleType = lesion_data['NeedleType'].tolist()
             ReferenceNeedle = lesion_data['ReferenceNeedle'].tolist()
 
+            #%%
             if True in ReferenceNeedle:
                 k = 0
             else:
