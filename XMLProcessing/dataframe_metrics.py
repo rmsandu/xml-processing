@@ -74,7 +74,7 @@ def plot_boxplot_angles(df_angles, rootdir):
 
 def customize_dataframe(dfPatientsTrajectories, rootdir):
 
-    # %%
+
     dfPatientsTrajectories.apply(pd.to_numeric, errors='ignore', downcast='float').info()
     dfPatientsTrajectories[['LateralError']] = dfPatientsTrajectories[['LateralError']].apply(pd.to_numeric,
                                                                                               downcast='float')
@@ -104,6 +104,7 @@ def customize_dataframe(dfPatientsTrajectories, rootdir):
 
     # %% Correct the lesion and needle index
     patient_unique = df_IRE_TPEs_NoReference['PatientID'].unique()
+
     for PatientIdx, patient in enumerate(patient_unique):
         patient_data = df_IRE_TPEs_NoReference[df_IRE_TPEs_NoReference['PatientID'] == patient]
         lesion_unique = patient_data['LesionNr'].unique()
@@ -176,4 +177,5 @@ def customize_dataframe(dfPatientsTrajectories, rootdir):
 
     dfTPEs.to_excel(writer, sheet_name='TPEs', index=False, na_rep='NaN')
     dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
+
     writer.save()
