@@ -256,7 +256,7 @@ class Needle:
     def getTumorSegmentations(self):
         return self.segmentations_tumor
 
-    def to_dict(self, patientID, patient_name, lesionIdx, needle_idx, dict_needles, img_registration):
+    def to_dict_unpack(self, patientID, patient_name, lesionIdx, needle_idx, dict_needles, img_registration):
         """ Unpack Needle Object class to dict.
             Return needle information.
             If one needle has several segmentations, iterate and return all.
@@ -281,7 +281,7 @@ class Needle:
                 dict_needles['TimeIntervention'].append(self.time_intervention)
                 dict_needles['PlannedEntryPoint'].append(self.planned.entrypoint)
                 dict_needles['PlannedTargetPoint'].append(self.planned.targetpoint)
-                dict_needles['PlannedNeedleLength'].append(self.planned.length_needle)
+                # dict_needles['PlannedNeedleLength'].append(self.planned.length_needle)
                 dict_needles['ValidationEntryPoint'].append(self.validation.entrypoint)
                 dict_needles['ValidationTargetPoint'].append(self.validation.targetpoint)
                 dict_needles['ReferenceNeedle'].append(self.isreference)
@@ -353,7 +353,7 @@ class Needle:
             dict_needles['TimeIntervention'].append(self.time_intervention)
             dict_needles['PlannedEntryPoint'].append(self.planned.entrypoint)
             dict_needles['PlannedTargetPoint'].append(self.planned.targetpoint)
-            dict_needles['PlannedNeedleLength'].append(self.planned.length_needle)
+            # dict_needles['PlannedNeedleLength'].append(self.planned.length_needle)
             dict_needles['ValidationEntryPoint'].append(self.validation.entrypoint)
             dict_needles['ValidationTargetPoint'].append(self.validation.targetpoint)
             dict_needles['ReferenceNeedle'].append(self.isreference)
@@ -409,8 +409,16 @@ class NeedleToDictWriter:
         if len(needles)>0:
             # for each patient the dict_needles defaultdict is reset
             dict_needles = defaultdict(list)
+
+            # if needles[0].isreference is False:
+            #     # if there is no reference needle defined start the needle count at 1
+            #     k = 1
+            # elif needles[0].isreference is True:
+            #     k = 0
+
             for needle_idx, needle in enumerate(needles):
-                needle.to_dict(patientID, patient_name, lesion_count, needle_idx, dict_needles, img_registration)
+                needle.to_dict_unpack(patientID, patient_name, lesion_count, needle_idx, dict_needles, img_registration)
+
             return dict_needles
         else:
             print('No needles for this lesion')
@@ -450,4 +458,7 @@ class Trajectory:
         self.targetpoint = targetpoint
 
     def setLengthNeedle(self):
-        self.length_needle = np.linalg.norm(self.targetpoint - self.entrypoint)
+        if self.targetpoint is not None and self.entrypoint is not None:
+            self.length_needle = np.linalg.norm(self.targetpoint - self.entrypoint)
+        else:
+            self.length_needle = None

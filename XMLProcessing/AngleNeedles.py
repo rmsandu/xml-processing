@@ -15,17 +15,17 @@ def unit_vector(vector):
 def angle_between(epNeedle1,tpNeedle1,epNeedle2,tpNeedle2):
     """ Returns the angle in degrees between entry and reference trajectory needles::
 
-            >>> angle_between((1, 0, 0), (0, 1, 0))
+            angle_between((1, 0, 0), (0, 1, 0))
             1.5707963267948966
-            >>> angle_between((1, 0, 0), (1, 0, 0))
+            angle_between((1, 0, 0), (1, 0, 0))
             0.0
-            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            angle_between((1, 0, 0), (-1, 0, 0))
             3.141592653589793        
     """
-#        vector1 = TargetPoint-EntryPoint
-#        vector2 = TargetPoint-EntryPoint
+    #    vector1 = TargetPoint-EntryPoint
+    #    vector2 = TargetPoint-EntryPoint
 
-        # if the vectors are string format
+    # if the vectors are string format
     # epNeedle1 = np.array([float(i) for i in epNeedle1.split()])
     # tpNeedle1 = np.array([float(i) for i in tpNeedle1.split()])
     #
