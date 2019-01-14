@@ -9,29 +9,25 @@ import pandas as pd
 from time import strftime
 from collections import defaultdict
 
-# Raluca's Libraries
 import readInputKeyboard
 import NeedlesInfoClasses
 import parseNeedleTrajectories as parseNeedleTrajectories
 import dataframe_metrics
 
-#Trini's Libraries
-# import XMLProcessing.NeedlesInfoClasses as NeedlesInfoClasses
-# import XMLProcessing.parseNeedleTrajectories as parseNeedleTrajectories
-#
-# import XMLProcessing.extractTrajectoriesAngles as eta
-# from XMLProcessing.customize_dataframe import customize_dataframe
-##
 # %%
-rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory given as r"))
-outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
-flag_IRE = readInputKeyboard.getChoice('Do you want to analyze only the IRE needles?', ['Y', 'N'])
-flag_segmentation_info = readInputKeyboard.getChoice('Do you want to have the segmentation information ?', ['Y', 'N'])
-#
+
+"""
+example how to call the function reading from Keyboard
 # rootdir = r""
 # outfilename = 'ire_analysis'
 # flag_IRE = 'y' # flag to compute values only for IRE type of needles
 # flag_segmentation_info = 'n'
+"""
+rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory given as r"))
+outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
+flag_IRE = readInputKeyboard.getChoice('Do you want to analyze only the IRE needles?', ['Y', 'N'])
+flag_segmentation_info = readInputKeyboard.getChoice('Do you want to have the segmentation information ?', ['Y', 'N'])
+
 
 # instanstiate the patient repository class
 patientsRepo = NeedlesInfoClasses.PatientRepo()
@@ -136,6 +132,7 @@ else:
         df_final[["Ablation_Series_UID"]] = df_final[["Ablation_Series_UID"]].astype(str)
         df_final[["Tumor_Series_UID"]] = df_final[["Tumor_Series_UID"]].astype(str)
     else:
+        # discard the segmentation information from the final output Excel when segmentation info (paths etc) is not desired
         df_final = df_patients_trajectories.iloc[:,0:19].copy() # use copy to avoid the case where changing df1 also changes df
     # df_final.sort_values(by=['PatientName'], inplace=True)
     df_final.apply(pd.to_numeric, errors='ignore', downcast='float').info()
