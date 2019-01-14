@@ -44,6 +44,7 @@ def extract_patient_id(filename, patient_id_xml, patient_name_flag=True):
         patient_folder_name = all_paths[ix_patient_folder_name[0]]
     except Exception as e:
         print(repr(e))
+        # error appears generally because an "UndefinedPatient" folder is created everytime when CAS-One IR is opened.
     patient_id = re.search("\d", patient_folder_name)  # numerical id
     ix_patient_id = int(patient_id.start())
     underscore = re.search("_", patient_folder_name[ix_patient_id:])

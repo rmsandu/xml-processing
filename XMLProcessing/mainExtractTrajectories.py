@@ -3,6 +3,11 @@
 Created on Tue Feb 27 16:49:22 2018
 
 @author: Raluca Sandu
+
+example how to call the function reading from Keyboard
+# rootdir = r""
+# outfilename = 'ire_analysis'
+# flag_segmentation_info = 'n'
 """
 import os
 import pandas as pd
@@ -15,19 +20,16 @@ import parseNeedleTrajectories as parseNeedleTrajectories
 import dataframe_metrics
 
 # %%
-
-"""
-example how to call the function reading from Keyboard
-# rootdir = r""
-# outfilename = 'ire_analysis'
-# flag_IRE = 'y' # flag to compute values only for IRE type of needles
-# flag_segmentation_info = 'n'
-"""
+#
 rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory given as r"))
 outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
 flag_IRE = readInputKeyboard.getChoice('Do you want to analyze only the IRE needles?', ['Y', 'N'])
 flag_segmentation_info = readInputKeyboard.getChoice('Do you want to have the segmentation information ?', ['Y', 'N'])
 
+# rootdir = r"C:\PatientDatasets_GroundTruth_Database\Stockholm\3d_segmentation_maverric\maverric"
+# outfilename =  "data_analysis_maverric_june_segmented_2018"
+# flag_IRE = False
+# flag_segmentation_info =  True
 
 # instanstiate the patient repository class
 patientsRepo = NeedlesInfoClasses.PatientRepo()
@@ -127,7 +129,7 @@ else:
     filename = outfilename + '_' +timestr + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
-    if flag_segmentation_info == 'y':
+    if flag_segmentation_info:
         df_final = df_patients_trajectories
         df_final[["Ablation_Series_UID"]] = df_final[["Ablation_Series_UID"]].astype(str)
         df_final[["Tumor_Series_UID"]] = df_final[["Tumor_Series_UID"]].astype(str)
@@ -152,3 +154,4 @@ if flag_IRE:
     print("Angles have been computed!")
 
 # TODO: condition for MWA Angles
+

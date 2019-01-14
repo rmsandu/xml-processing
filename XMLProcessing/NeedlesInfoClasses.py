@@ -379,7 +379,7 @@ class Needle:
             dict_needles['Ablation_Segmentation_Datetime'].append(None)
             try:
                 dict_needles['RegistrationFlag'].append(img_registration[0].r_flag)
-                dict_needles['RegistratqionMatrix'].append(img_registration[0].r_matrix)
+                dict_needles['RegistrationMatrix'].append(img_registration[0].r_matrix)
                 dict_needles['PP_planing'].append(img_registration[0].pp_planning)
                 dict_needles['PP_validation'].append(img_registration[0].pp_validation)
                 dict_needles['RegistrationType'].append(img_registration[0].r_type)
@@ -387,7 +387,7 @@ class Needle:
                 print(repr(e))
                 print('patient id: ', patientID)
                 dict_needles['RegistrationFlag'].append(None)
-                dict_needles['RegistratqionMatrix'].append(None)
+                dict_needles['RegistrationMatrix'].append(None)
                 dict_needles['PP_planing'].append(None)
                 dict_needles['PP_validation'].append(None)
                 dict_needles['RegistrationType'].append(None)
