@@ -25,7 +25,8 @@ def call_needle_extraction(rootdir):
 
     for subdir, dirs, files in os.walk(rootdir):
 
-        for file in sorted(files):
+        for file in sorted(files): # sort files by date of creation
+
             fileName, fileExtension = os.path.splitext(file)
 
             # the tumour segmentation path is in the "Plan.xml" and the ablation segmentation path is in the "Validation.xml"
@@ -122,7 +123,7 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
 
-    if flag_segmentation_info:
+    if flag_segmentation_info is True:
         df_final = df_patients_trajectories
     else:
         # discard the segmentation information from the final output Excel when not needed
@@ -145,10 +146,18 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
 #%%
 if __name__ == '__main__':
 
+    # rootdir = "C:\test_patient"
+    # outfilename =  "info_logs"
+    # flag_IRE = False
+    # flag_MWA = True
+    # flag_segmentation_info =  True
+
     rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
     outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
-    flag_IRE = readInputKeyboard.getChoice('Do you want to analyze only the IRE needles?', ['Y', 'N'])
-    flag_segmentation_info = readInputKeyboard.getChoice('Do you want to have the segmentation information ?', ['Y', 'N'])
+    # todo: better questions
+    flag_IRE = readInputKeyboard.getChoiceYesNo('Do you want to analyze only the IRE needles?', ['Y', 'N'])
+    flag_MWA = readInputKeyboard.getChoiceYesNo('Do you want to analyze only the MWA Needles?', ['Y', 'N'])
+    flag_segmentation_info = readInputKeyboard.getChoiceYesNo('Do you want to have the segmentation information ?', ['Y', 'N'])
 
     # instanstiate the patient repository class
     patientsRepo = NeedlesInfoClasses.PatientRepo()
@@ -167,14 +176,24 @@ if __name__ == '__main__':
     else:
         print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure.')
 
-    if df_patients_trajectories is None:
-        print('No Needle Trajectories found in the input file directory:')
+    try:
+        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories, flag_IRE, flag_MWA, flag_segmentation_info)
+        print("Dataframe cleaning successful. Lesion and Needle Nr updated...")
+    except Exception as e:
+        print(repr(e))
+        print('No Needle Trajectories found in the input file directory!')
+
+    if flag_IRE is True:
+        #%% compute area between IRE Needles
+        df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
+        df_areas = df_area_between_needles[['PatientID', 'LesionNr','NeedleCount', 'Planned Area', 'Validation Area']]
+        #%% compute angles between IRE Needles
+        df_angles = dataframe_metrics.compute_angles(df_patients_trajectories)
+        dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
+        # write to Excel File...
+        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_patients_trajectories, df_TPEs_validated, df_areas, df_angles)
     else:
-        df_final = write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilename)
-
-    if flag_IRE:
-        if df_final:
-            dataframe_metrics.customize_dataframe(df_final, rootdir)
-            print("Angles have been computed!")
-
+        # write to Excel file all the information extracted without the df_angles and df_areas
+        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
+        print('Succes! Extracting and Writing Information to the Excel File.....')
 
