@@ -20,79 +20,68 @@ import parseNeedleTrajectories as parseNeedleTrajectories
 import dataframe_metrics
 
 # %%
-#
-rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory given as r"))
-outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
-flag_IRE = readInputKeyboard.getChoice('Do you want to analyze only the IRE needles?', ['Y', 'N'])
-flag_segmentation_info = readInputKeyboard.getChoice('Do you want to have the segmentation information ?', ['Y', 'N'])
 
-# rootdir = r"C:\PatientDatasets_GroundTruth_Database\Stockholm\3d_segmentation_maverric\maverric"
-# outfilename =  "data_analysis_maverric_june_segmented_2018"
-# flag_IRE = False
-# flag_segmentation_info =  True
+def call_needle_extraction(rootdir):
 
-# instanstiate the patient repository class
-patientsRepo = NeedlesInfoClasses.PatientRepo()
-pat_ids = []
-pat_id = 0
+    for subdir, dirs, files in os.walk(rootdir):
 
-for subdir, dirs, files in os.walk(rootdir):
+        for file in sorted(files):
+            fileName, fileExtension = os.path.splitext(file)
 
-    for file in sorted(files):
-        fileName, fileExtension = os.path.splitext(file)
+            # the tumour segmentation path is in the "Plan.xml" and the ablation segmentation path is in the "Validation.xml"
+            if fileExtension.lower().endswith('.xml') and (
+                    'validation' in fileName.lower() or 'plan' in fileName.lower()):
 
-        # if fileExtension.lower().endswith('.xml') and (
-        #         'validation' in fileName.lower() or 'plan' in fileName.lower()):
-        if fileExtension.lower().endswith('.xml') and (
-                'validation' in fileName.lower() ):
-            xmlFilePathName = os.path.join(subdir, file)
-            xmlfilename = os.path.normpath(xmlFilePathName)
-            xmlobj = parseNeedleTrajectories.I_parseRecordingXML(xmlfilename)
-
-            if xmlobj is 1:
-                # file was re-written of weird characters so we need to re-open it.
+                xmlFilePathName = os.path.join(subdir, file)
+                xmlfilename = os.path.normpath(xmlFilePathName)
                 xmlobj = parseNeedleTrajectories.I_parseRecordingXML(xmlfilename)
-            if xmlobj is not None and xmlobj!=1:
-                pat_id = xmlobj.patient_id_xml
-                pat_ids.append(pat_id)
-                # parse trajectories and other patient specific info
-                trajectories_info = parseNeedleTrajectories.II_parseTrajectories(xmlobj.trajectories)
-                if trajectories_info.trajectories is None:
-                    continue # no trajectories found in this xml, go on to the next file.
-                else:
-                    # check if patient exists first, if yes, instantiate new object, otherwise retrieve it from list
-                    patients = patientsRepo.getPatients()
-                    # perform search based on patient name if patient_id fails
-                    patient = [x for x in patients if x.patient_id_xml == pat_id]
-                    if not patient:
-                        # instantiate patient object
-                        # create patient measurements if patient is not already in the PatientsRepository
-                        patient = patientsRepo.addNewPatient(pat_id,
-                                                             xmlobj.patient_name)
-                        # instantiate extract registration
-                        # TODO: write registration matrix to Excel
-                        parseNeedleTrajectories.II_extractRegistration(xmlobj.trajectories, patient, xmlfilename)
-                        # add intervention data
-                        parseNeedleTrajectories.III_parseTrajectory(trajectories_info.trajectories, patient,
-                                                                    trajectories_info.series, xmlfilename,
-                                                                    trajectories_info.time_intervention,
-                                                                    trajectories_info.cas_version)
-                    else:
-                        # update patient measurements in the PatientsRepository if the patient (id) already exists
-                        # patient[0] because the returned result is a list with one element.
-                        parseNeedleTrajectories.III_parseTrajectory(trajectories_info.trajectories, patient[0],
-                                                                    trajectories_info.series, xmlfilename,
-                                                                    trajectories_info.time_intervention,
-                                                                    trajectories_info.cas_version)
-                        # add the registration, if several exist (hopefully not)
-                        # TODO: add flag in excel if registration existing (write registration to excel)
-                        parseNeedleTrajectories.II_extractRegistration(xmlobj.trajectories, patient[0], xmlfilename)
 
-# %% extract information from the object classes into pandas datafr ame
-patients = patientsRepo.getPatients()
-df_patients_trajectories = None
-needles_list = []
-if patients :
+                if xmlobj is 1:
+                    # file was re-written of weird characters so we need to re-open it.
+                    xmlobj = parseNeedleTrajectories.I_parseRecordingXML(xmlfilename)
+                if xmlobj is not None and xmlobj!=1:
+                    pat_id = xmlobj.patient_id_xml
+                    pat_ids.append(pat_id)
+                    # parse trajectories and other patient specific info
+                    trajectories_info = parseNeedleTrajectories.II_parseTrajectories(xmlobj.trajectories)
+                    if trajectories_info.trajectories is None:
+                        continue # no trajectories found in this xml, go on to the next file.
+                    else:
+                        # check if patient exists first, if yes, instantiate new object, otherwise retrieve it from list
+                        patients = patientsRepo.getPatients()
+                        # perform search based on patient name if patient_id fails
+                        patient = [x for x in patients if x.patient_id_xml == pat_id]
+                        if not patient:
+                            # instantiate patient object
+                            # create patient measurements if patient is not already in the PatientsRepository
+                            patient = patientsRepo.addNewPatient(pat_id,
+                                                                 xmlobj.patient_name)
+                            # instantiate extract registration
+                            # TODO: write registration matrix to Excel
+                            parseNeedleTrajectories.II_extractRegistration(xmlobj.trajectories, patient, xmlfilename)
+                            # add intervention data
+                            parseNeedleTrajectories.III_parseTrajectory(trajectories_info.trajectories, patient,
+                                                                        trajectories_info.series, xmlfilename,
+                                                                        trajectories_info.time_intervention,
+                                                                        trajectories_info.cas_version)
+                        else:
+                            # update patient measurements in the PatientsRepository if the patient (id) already exists
+                            # patient[0] because the returned result is a list with one element.
+                            parseNeedleTrajectories.III_parseTrajectory(trajectories_info.trajectories, patient[0],
+                                                                        trajectories_info.series, xmlfilename,
+                                                                        trajectories_info.time_intervention,
+                                                                        trajectories_info.cas_version)
+                            # add the registration, if several exist (hopefully not)
+                            # TODO: add flag in excel if registration existing (write registration to excel)
+                            parseNeedleTrajectories.II_extractRegistration(xmlobj.trajectories, patient[0], xmlfilename)
+
+
+def call_extract_class_2_df(patients):
+    """
+    extract information from the object classes into pandas dataframe
+    :param patients:
+    :return: dataframe of patient and needle treatment info
+    """
     for patient in patients:
         lesions = patient.getLesions()
         patientID = patient.patient_id_xml
@@ -109,6 +98,7 @@ if patients :
                                                                                       needles,
                                                                                       img_registration)
             needles_list.append(needles_defaultdict)
+
     # unpack from defaultdict and list
     needles_unpacked_list = defaultdict(list)
     for needle_trajectories in needles_list:
@@ -117,26 +107,28 @@ if patients :
                 needles_unpacked_list[keys].append(val)
     # conver to DataFrame for easier writing to Excel
     df_patients_trajectories = pd.DataFrame(needles_unpacked_list)
-    print("success")
-elif not patients:
-    print('No CAS Recordings found. Check if the files are there and in the correct folder structure.')
+    return df_patients_trajectories
+    print("Success unpacking from class to dataframe....")
 
-#%%  write to excel final list.
-if df_patients_trajectories is None:
-    print('No Needle Trajectories found in the input file directory:')
-else:
+
+def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilename):
+    """
+    write to excel final list.
+    :param df_patients_trajectories:
+    :return:  simplified dataframe and Excel file to disk
+    """
     timestr = strftime("%Y%m%d-%H%M%S")
     filename = outfilename + '_' +timestr + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
+
     if flag_segmentation_info:
         df_final = df_patients_trajectories
-        df_final[["Ablation_Series_UID"]] = df_final[["Ablation_Series_UID"]].astype(str)
-        df_final[["Tumor_Series_UID"]] = df_final[["Tumor_Series_UID"]].astype(str)
     else:
-        # discard the segmentation information from the final output Excel when segmentation info (paths etc) is not desired
+        # discard the segmentation information from the final output Excel when not needed
         df_final = df_patients_trajectories.iloc[:,0:19].copy() # use copy to avoid the case where changing df1 also changes df
     # df_final.sort_values(by=['PatientName'], inplace=True)
+    # some numerical conversions
     df_final.apply(pd.to_numeric, errors='ignore', downcast='float').info()
     df_final[['LateralError']] = df_final[['LateralError']].apply(pd.to_numeric, downcast='float')
     df_final[['AngularError']] = df_final[['AngularError']].apply(pd.to_numeric, downcast='float')
@@ -146,12 +138,43 @@ else:
     df_final[["TimeIntervention"]] = df_final[["TimeIntervention"]].astype(str)
     df_final.to_excel(writer, sheet_name='Paths', index=False, na_rep='NaN')
     writer.save()
-    print("success")
+    print("Succes writing info to Excel file....")
+    return df_final
 
-# %% write to Excel the IRE  dataset. Compute Angles & Areas for IREs
-if flag_IRE:
-    dataframe_metrics.customize_dataframe(df_final, rootdir)
-    print("Angles have been computed!")
 
-# TODO: condition for MWA Angles
+#%%
+if __name__ == '__main__':
+
+    rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
+    outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
+    flag_IRE = readInputKeyboard.getChoice('Do you want to analyze only the IRE needles?', ['Y', 'N'])
+    flag_segmentation_info = readInputKeyboard.getChoice('Do you want to have the segmentation information ?', ['Y', 'N'])
+
+    # instanstiate the patient repository class
+    patientsRepo = NeedlesInfoClasses.PatientRepo()
+    pat_ids = []
+    pat_id = 0
+
+    # call script for extracting needle trajectories from XML
+    call_needle_extraction(rootdir)
+
+    patients = patientsRepo.getPatients()
+    df_patients_trajectories = None
+    needles_list = []
+
+    if patients:
+        df_patients_trajectories = call_extract_class_2_df(patients)
+    else:
+        print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure.')
+
+    if df_patients_trajectories is None:
+        print('No Needle Trajectories found in the input file directory:')
+    else:
+        df_final = write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilename)
+
+    if flag_IRE:
+        if df_final:
+            dataframe_metrics.customize_dataframe(df_final, rootdir)
+            print("Angles have been computed!")
+
 
