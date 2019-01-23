@@ -292,37 +292,35 @@ class Needle:
                 dict_needles['EuclideanError'].append(self.tpeerorrs.euclidean)
                 dict_needles['RegistrationFlag'].append(img_registration[0].r_flag)
                 dict_needles['RegistrationMatrix'].append(img_registration[0].r_matrix)
-                dict_needles['PP_planing'].append(img_registration[0].pp_planning)
-                dict_needles['PP_validation'].append(img_registration[0].pp_validation)
-                dict_needles['RegistrationType'].append(img_registration[0].r_type)
+                # dict_needles['PP_planing'].append(img_registration[0].pp_planning)
+                # dict_needles['PP_validation'].append(img_registration[0].pp_validation)
+                # dict_needles['RegistrationType'].append(img_registration[0].r_type)
                 try:
                     # try catch block if there is no tumor segmentation at the respective index
-                    # dict_needles['NeedleType'].append(segmentations_tumor[idx_s].needle_type)
                     dict_needles['TumorPath'].append(segmentations_tumor[idx_s].mask_path)
                     dict_needles['PlanTumorPath'].append(segmentations_tumor[idx_s].source_path)
                     dict_needles['Tumor_CT_Series'].append(segmentations_tumor[idx_s].ct_series)
-                    dict_needles['Tumor_Series_UID'].append(segmentations_tumor[idx_s].series_UID)
+                    # dict_needles['Tumor_Series_UID'].append(segmentations_tumor[idx_s].series_UID)
                     dict_needles["Tumor_Segmentation_Datetime"].append(segmentations_tumor[idx_s].segmentation_datetime)
                 except Exception:
-                    # dict_needles['NeedleType'].append(None)
                     dict_needles['TumorPath'].append(None)
                     dict_needles['PlanTumorPath'].append(None)
                     dict_needles['Tumor_CT_Series'].append(None)
-                    dict_needles['Tumor_Series_UID'].append(None)
+                    # dict_needles['Tumor_Series_UID'].append(None)
                     dict_needles["Tumor_Segmentation_Datetime"].append(None)
                 try:
                     # try catch block if there is no ablation segmentation at the respective index
                     dict_needles['AblationPath'].append(segmentations_ablation[idx_s].mask_path)
                     dict_needles['ValidationAblationPath'].append(segmentations_ablation[idx_s].source_path)
                     dict_needles['Ablation_CT_Series'].append(segmentations_ablation[idx_s].ct_series)
-                    dict_needles['Ablation_Series_UID'].append(segmentations_ablation[idx_s].series_UID)
+                    # dict_needles['Ablation_Series_UID'].append(segmentations_ablation[idx_s].series_UID)
                     dict_needles["Ablation_Segmentation_Datetime"].append(
                         segmentations_ablation[idx_s].segmentation_datetime)
-                    dict_needles['AblationSystem'].append(None)
-                    dict_needles['AblatorID'].append(None)
-                    dict_needles['AblationSystemVersion'].append(None)
-                    dict_needles['AblationShapeIndex'].append(None)
-                    dict_needles['AblatorType'].append(None)
+                    # dict_needles['AblationSystem'].append(None)
+                    # dict_needles['AblatorID'].append(None)
+                    # dict_needles['AblationSystemVersion'].append(None)
+                    # dict_needles['AblationShapeIndex'].append(None)
+                    # dict_needles['AblatorType'].append(None)
                     #TODO: instantiation might be useless. the info is in REDCAP
                     # dict_needles['AblationSystem'].append(segmentations_tumor[idx_s].needle_specifications.ablationSystem)
                     # dict_needles['AblatorID'].append(segmentations_ablation[idx_s].needle_specifications.ablator_id)
@@ -333,13 +331,13 @@ class Needle:
                     dict_needles['AblationPath'].append(None)
                     dict_needles['ValidationAblationPath'].append(None)
                     dict_needles['Ablation_CT_Series'].append(None)
-                    dict_needles['Ablation_Series_UID'].append(None)
+                    # dict_needles['Ablation_Series_UID'].append(None)
                     dict_needles['Ablation_Segmentation_Datetime'].append(None)
-                    dict_needles['AblationSystem'].append(None)
-                    dict_needles['AblatorID'].append(None)
-                    dict_needles['AblationSystemVersion'].append(None)
-                    dict_needles['AblationShapeIndex'].append(None)
-                    dict_needles['AblatorType'].append(None)
+                    # dict_needles['AblationSystem'].append(None)
+                    # dict_needles['AblatorID'].append(None)
+                    # dict_needles['AblationSystemVersion'].append(None)
+                    # dict_needles['AblationShapeIndex'].append(None)
+                    # dict_needles['AblatorType'].append(None)
             return dict_needles
         else:
             # no segmentations have been found for this needle
@@ -365,33 +363,33 @@ class Needle:
             dict_needles['TumorPath'].append(None)
             dict_needles['PlanTumorPath'].append(None)
             dict_needles['Tumor_CT_Series'].append(None)
-            dict_needles['Tumor_Series_UID'].append(None)
+            # dict_needles['Tumor_Series_UID'].append(None)
             dict_needles['Tumor_Segmentation_Datetime'].append(None)
             dict_needles['AblationPath'].append(None)
             dict_needles['ValidationAblationPath'].append(None)
             dict_needles['Ablation_CT_Series'].append(None)
-            dict_needles['Ablation_Series_UID'].append(None)
-            dict_needles['AblationSystem'].append(None)
-            dict_needles['AblatorID'].append(None)
-            dict_needles['AblationSystemVersion'].append(None)
-            dict_needles['AblationShapeIndex'].append(None)
-            dict_needles['AblatorType'].append(None)
+            # dict_needles['Ablation_Series_UID'].append(None)
             dict_needles['Ablation_Segmentation_Datetime'].append(None)
+            # dict_needles['AblationSystem'].append(None)
+            # dict_needles['AblatorID'].append(None)
+            # dict_needles['AblationSystemVersion'].append(None)
+            # dict_needles['AblationShapeIndex'].append(None)
+            # dict_needles['AblatorType'].append(None)
+
             try:
                 dict_needles['RegistrationFlag'].append(img_registration[0].r_flag)
                 dict_needles['RegistrationMatrix'].append(img_registration[0].r_matrix)
-                dict_needles['PP_planing'].append(img_registration[0].pp_planning)
-                dict_needles['PP_validation'].append(img_registration[0].pp_validation)
-                dict_needles['RegistrationType'].append(img_registration[0].r_type)
+                # dict_needles['PP_planing'].append(img_registration[0].pp_planning)
+                # dict_needles['PP_validation'].append(img_registration[0].pp_validation)
+                # dict_needles['RegistrationType'].append(img_registration[0].r_type)
             except Exception as e:
                 print(repr(e))
                 print('patient id: ', patientID)
                 dict_needles['RegistrationFlag'].append(None)
                 dict_needles['RegistrationMatrix'].append(None)
-                dict_needles['PP_planing'].append(None)
-                dict_needles['PP_validation'].append(None)
-                dict_needles['RegistrationType'].append(None)
-
+                # dict_needles['PP_planing'].append(None)
+                # dict_needles['PP_validation'].append(None)
+                # dict_needles['RegistrationType'].append(None)
 
             return dict_needles
 
@@ -409,12 +407,6 @@ class NeedleToDictWriter:
         if len(needles)>0:
             # for each patient the dict_needles defaultdict is reset
             dict_needles = defaultdict(list)
-
-            # if needles[0].isreference is False:
-            #     # if there is no reference needle defined start the needle count at 1
-            #     k = 1
-            # elif needles[0].isreference is True:
-            #     k = 0
 
             for needle_idx, needle in enumerate(needles):
                 needle.to_dict_unpack(patientID, patient_name, lesion_count, needle_idx, dict_needles, img_registration)

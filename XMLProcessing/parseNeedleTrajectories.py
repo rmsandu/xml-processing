@@ -188,7 +188,7 @@ def IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_f
         if needle_type is "IRE":
             needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=1) # distance is in mm
         elif needle_type is "MWA":
-            needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=1) # distance is in mm
+            needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=3) # distance is in mm
         # case for new needle not currently saved in database
         if needle is None:
             # add the needle to lesion class and init its parameters
@@ -246,10 +246,8 @@ def III_parseTrajectory(trajectories, patient, ct_series, xml_filepath, time_int
         ep_planning = np.array([float(i) for i in xmlTrajectory.EntryPoint.cdata.split()])
         tp_planning = np.array([float(i) for i in xmlTrajectory.TargetPoint.cdata.split()])
 
-
         if (xmlTrajectory['type']) and 'IRE' in xmlTrajectory['type']:
             needle_type = 'IRE'
-
             try:
                 children_trajectories = xmlTrajectory.Children.Trajectory
                 # function to check if the lesion exists based on location returning true or false
