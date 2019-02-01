@@ -105,11 +105,13 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
 
     dfTPEs = dfPatientsTrajectories.copy()
 
-    # drop the non-validated needles assuming that needles that were actually used for the surgery were ALL validated
-    # double verification: remove needle row if both Euclidean Error and both Tumor and Ablation Path are empty
+
     if flag_segmentation_info is True:
+        # drop the non-validated needles assuming that needles that were actually used for the surgery were ALL validated
+        # double verification: remove needle row if both Euclidean Error and both Tumor and Ablation Path are empty
         dfTPEs.dropna(subset=['EuclideanError', 'TumorPath', 'AblationPath'], how='all', inplace=True)
     else:
+        # select all columns except those that have segmentation information
         dfTPEs.dropna(subset=['EuclideanError'],
                   inplace=True)
 
@@ -195,8 +197,14 @@ def write_toExcelFile(rootdir, outfile, df_TPEs_validated, dfPatientsTrajectorie
     filename = outfile + timestr + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
-    df_TPEs_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
     dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
+    df_TPEs_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
+
+    df_TPEs = df_TPEs_validated[['PatientID', 'PatientName', 'LesionNr', 'NeedleNr', 'NeedleType',
+                                       'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
+                                       'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
+    df_TPEs.to_excel(writer, sheet_name='TPEs_Only', index=False, na_rep='NaN')
+
     dfLesionsTotalIndex.to_excel(writer, sheet_name='LesionsTotal', index=False, na_rep='Nan')
     dfNeedlesIndex.to_excel(writer, sheet_name='NeedlesLesion', index=False, na_rep='Nan')
     dfLesionsIndex.to_excel(writer, sheet_name='NeedleFreq', index=False, na_rep='Nan')
@@ -204,9 +212,6 @@ def write_toExcelFile(rootdir, outfile, df_TPEs_validated, dfPatientsTrajectorie
         df_angles.to_excel(writer, sheet_name='Angles', index=False, na_rep='NaN')
     if df_areas is not None:
         df_areas.to_excel(writer, sheet_name='Areas', index=False, na_rep='NaN')
-    df_TPEs = df_TPEs_validated[['PatientID', 'PatientName', 'LesionNr', 'NeedleNr', 'NeedleType',
-                                       'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
-                                       'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
-    df_TPEs.to_excel(writer, sheet_name='TPE_IREs', index=False, na_rep='NaN')
+
 
     writer.save()

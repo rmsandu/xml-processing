@@ -155,8 +155,8 @@ if __name__ == '__main__':
     rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
     outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
     # todo: better questions
-    flag_IRE = readInputKeyboard.getChoiceYesNo('Do you want to analyze only the IRE needles?', ['Y', 'N'])
-    flag_MWA = readInputKeyboard.getChoiceYesNo('Do you want to analyze only the MWA Needles?', ['Y', 'N'])
+    flag_IRE = readInputKeyboard.getChoiceYesNo('Do you want to analyze the IRE needles ?', ['Y', 'N'])
+    flag_MWA = readInputKeyboard.getChoiceYesNo('Do you want to analyze the MWA Needles ?', ['Y', 'N'])
     flag_segmentation_info = readInputKeyboard.getChoiceYesNo('Do you want to have the segmentation information ?', ['Y', 'N'])
 
     # instanstiate the patient repository class
@@ -191,7 +191,9 @@ if __name__ == '__main__':
         df_angles = dataframe_metrics.compute_angles(df_patients_trajectories)
         dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
         # write to Excel File...
-        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_patients_trajectories, df_TPEs_validated, df_areas, df_angles)
+        dataframe_metrics.write_toExcelFile(rootdir=rootdir, outfile=outfilename, df_TPEs_validated=df_TPEs_validated,
+                                            dfPatientsTrajectories=df_patients_trajectories, df_angles=df_angles, df_areas=df_areas)
+
     else:
         # write to Excel file all the information extracted without the df_angles and df_areas
         dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
