@@ -9,6 +9,7 @@ The snippets package contains the following modules:
 * `C_NeedlesInfoClasses` -- 
 * `D_extractIREAngles` -- 
 * `extractTPEsXML` -- 
+* `extractAreaNeedles` -- extract the areas formed by the coordinates in space of the needle target points
 * `plot3DAngles` -- plot angles in 3D based on their 3D coordinates in space 
 
 
