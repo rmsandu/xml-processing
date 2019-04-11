@@ -1,3 +1,9 @@
+
+
+
+
+
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 27 16:49:22 2018
@@ -15,8 +21,8 @@ from time import strftime
 from collections import defaultdict
 
 import readInputKeyboard
-import NeedlesInfoClasses
-import parseNeedleTrajectories as parseNeedleTrajectories
+import C_NeedlesInfoClasses
+import B_parseNeedleTrajectories as parseNeedleTrajectories
 import dataframe_metrics
 
 # %%
@@ -93,11 +99,11 @@ def call_extract_class_2_df(patients):
             print('more than one registration available for patient', patientName)
         for l_idx, lesion in enumerate(lesions):
             needles = lesion.getNeedles()
-            needles_defaultdict = NeedlesInfoClasses.NeedleToDictWriter.needlesToDict(patientID,
-                                                                                      patientName,
-                                                                                      l_idx+1,
-                                                                                      needles,
-                                                                                      img_registration)
+            needles_defaultdict = C_NeedlesInfoClasses.NeedleToDictWriter.needlesToDict(patientID,
+                                                                                        patientName,
+                                                                                        l_idx + 1,
+                                                                                        needles,
+                                                                                        img_registration)
             needles_list.append(needles_defaultdict)
 
     # unpack from defaultdict and list
@@ -160,7 +166,7 @@ if __name__ == '__main__':
     flag_segmentation_info = readInputKeyboard.getChoiceYesNo('Do you want to have the segmentation information ?', ['Y', 'N'])
 
     # instanstiate the patient repository class
-    patientsRepo = NeedlesInfoClasses.PatientRepo()
+    patientsRepo = C_NeedlesInfoClasses.PatientRepo()
     pat_ids = []
     pat_id = 0
 
@@ -185,10 +191,11 @@ if __name__ == '__main__':
 
     if flag_IRE is True:
         #%% compute area between IRE Needles
+        # TODO: calculate angles
         df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
         df_areas = df_area_between_needles[['PatientID', 'LesionNr','NeedleCount', 'Planned Area', 'Validation Area']]
         #%% compute angles between IRE Needles
-        df_angles = dataframe_metrics.compute_angles(df_patients_trajectories)
+        df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
         dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
         # write to Excel File...
         dataframe_metrics.write_toExcelFile(rootdir=rootdir, outfile=outfilename, df_TPEs_validated=df_TPEs_validated,

@@ -7,6 +7,7 @@ Created on Mon Feb  5 10:20:31 2018
 import numpy as np
 from collections import defaultdict
 
+
 class PatientRepo:
 
     def __init__(self):

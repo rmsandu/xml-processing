@@ -11,7 +11,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import extractAreaNeedles
-import extractIREAngles
+import D_extractIREAngles
 
 pd.options.display.float_format = '{:.2f}'.format
 
@@ -42,7 +42,7 @@ def compute_angles(df):
     patient_unique = df['PatientID'].unique()
     for PatientIdx, patient in enumerate(patient_unique):
         patient_data = df[df['PatientID'] == patient]
-        extractIREAngles.ComputeAnglesTrajectories.FromTrajectoriesToNeedles(patient_data, patient, Angles)
+        D_extractIREAngles.ComputeAnglesTrajectories.FromTrajectoriesToNeedles(patient_data, patient, Angles)
     df_angles = pd.DataFrame(Angles)
 
     # convert to dataframe & make columns numerical so Excel operations are allowed
@@ -105,7 +105,7 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
 
     dfTPEs = dfPatientsTrajectories.copy()
 
-
+    #todo: probably should remove the NaN validation from the segmentation info
     if flag_segmentation_info is True:
         # drop the non-validated needles assuming that needles that were actually used for the surgery were ALL validated
         # double verification: remove needle row if both Euclidean Error and both Tumor and Ablation Path are empty
@@ -114,6 +114,7 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
         # select all columns except those that have segmentation information
         dfTPEs.dropna(subset=['EuclideanError'],
                   inplace=True)
+        # todo: actually select the columns
 
     # with inplace=True to Keep the DataFrame with valid entries in the same variable.
     if flag_IRE is True and flag_MWA is False:
@@ -193,8 +194,9 @@ def write_toExcelFile(rootdir, outfile, df_TPEs_validated, dfPatientsTrajectorie
     dfLesionsTotal = df_TPEs_validated.groupby(['PatientID']).LesionNr.max().to_frame('Total Lesions')
     dfLesionsTotalIndex = dfLesionsTotal.add_suffix(' Count').reset_index()
     # %%  write to Excel File
-    timestr = time.strftime("%Y%m%d-%H%M%S")
-    filename = outfile + timestr + '.xlsx'
+    # timestr = time.strftime("%Y%m%d-%H%M%S")
+    # filename = outfile + timestr + '.xlsx'
+    filename = outfile + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
     dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
@@ -213,5 +215,5 @@ def write_toExcelFile(rootdir, outfile, df_TPEs_validated, dfPatientsTrajectorie
     if df_areas is not None:
         df_areas.to_excel(writer, sheet_name='Areas', index=False, na_rep='NaN')
 
-
     writer.save()
+

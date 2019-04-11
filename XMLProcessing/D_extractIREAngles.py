@@ -14,33 +14,16 @@ class ComputeAnglesTrajectories():
 
         # keep just the IRE Needles
         df_IREs = df_patient_data[df_patient_data.NeedleType == 'IRE']
-        # recompute the 'LesionNr' just for Validated IRE Angles
-        list_lesion_count = []
-        needles = df_IREs['NeedleNr'].tolist()
-         # TODO: redundant. remove the lesion re-indexing in this function.
-        # TODO: do the lesion re-indexing globally
-        k_lesion = 1
-        for needle_idx, needle in enumerate(needles):
-            if needle_idx == 0:
-                list_lesion_count.append(k_lesion)
-            else:
-                if needles[needle_idx] <= needles[needle_idx - 1]:
-                    k_lesion += 1
-                    list_lesion_count.append(k_lesion)
-                else:
-                    list_lesion_count.append(k_lesion)
 
         # get unique values from the lesion index count
-        lesion_unique = list(set(list_lesion_count))
-        try:
-            df_IREs['LesionNr'] = list_lesion_count
-        except Exception as e:
-            print(repr(e))
+        lesion_unique = list(set(df_IREs['LesionNr']))
+
 
         for i, lesion in enumerate(lesion_unique):
 
             lesion_data = df_IREs[df_IREs['LesionNr'] == lesion]
-            needles_lesion = lesion_data['NeedleNr'].tolist()
+            needles_lesion_1 = lesion_data['NeedleNr'] - 1 # substract 1 because indexing starts at 0 in Python
+            needles_lesion = needles_lesion_1.tolist()
             PlannedEntryPoint = lesion_data['PlannedEntryPoint'].tolist()
             PlannedTargetPoint = lesion_data['PlannedTargetPoint'].tolist()
             ValidationEntryPoint = lesion_data['ValidationEntryPoint'].tolist()
