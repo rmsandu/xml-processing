@@ -1,4 +1,18 @@
-Code for processing files involved in Imaged Guided Therapy Systems (tailored for the CAS-one Cascination System)
-- medical image analysis (CT scans)
-- file pre-processing (text, etc)
+# Repository for processing XML Log files from surgeries conducted with medical devices - data mining
+- extracting information from XML Logs outputted from Imaged Guided Stereotactic Devices (tailored for the CAS-One IR Logs)
 - statistical metrics for assessing the planning and validation of the tools (needles, ablation devices, etc)
+
+
+The snippets package contains the following modules:
+* `A_mainExtractTrajectories` -- 
+* `B_parseNeedleTrajectories` -- 
+* `C_NeedlesInfoClasses` -- 
+* `D_extractIREAngles` -- 
+* `extractTPEsXML` -- 
+* `plot3DAngles` -- plot angles in 3D based on their 3D coordinates in space 
+
+
+
+
+
+
