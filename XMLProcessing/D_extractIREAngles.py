@@ -8,7 +8,8 @@ import numpy as np
 import AngleNeedles
 from itertools import combinations
 
-class ComputeAnglesTrajectories():
+
+class ComputeAnglesTrajectories:
 
     def FromTrajectoriesToNeedles(df_patient_data, patientID, Angles):
 
@@ -18,11 +19,10 @@ class ComputeAnglesTrajectories():
         # get unique values from the lesion index count
         lesion_unique = list(set(df_IREs['LesionNr']))
 
-
         for i, lesion in enumerate(lesion_unique):
 
             lesion_data = df_IREs[df_IREs['LesionNr'] == lesion]
-            needles_lesion_1 = lesion_data['NeedleNr'] - 1 # substract 1 because indexing starts at 0 in Python
+            needles_lesion_1 = lesion_data['NeedleNr']
             needles_lesion = needles_lesion_1.tolist()
             PlannedEntryPoint = lesion_data['PlannedEntryPoint'].tolist()
             PlannedTargetPoint = lesion_data['PlannedTargetPoint'].tolist()
@@ -42,19 +42,28 @@ class ComputeAnglesTrajectories():
 
                 try:
                     if NeedleType[combination_angles[0]] == 'MWA' or NeedleType[combination_angles[1]] == 'MWA':
-                        continue  # go back to the begining of the loop, else option not needed
+                        continue  # go back to the beginning of the loop, else option not needed
                 except Exception as e:
                     print(repr(e))
 
+                # try:
+                #     print(ReferenceNeedle[combination_angles[0]])
+                # except Exception as e:
+                #     print(repr(e))
+                #     continue
+                #
+                # try:
+                #     print(ReferenceNeedle[combination_angles[1]])
+                # except Exception as e:
+                #     print(repr(e))
+                #     continue
 
                 if ReferenceNeedle[combination_angles[0]] is False and ReferenceNeedle[combination_angles[1]] is False:
                     # no reference needle available, older version of XML CAS Logs
                     needleA = needles_lesion[combination_angles[0]] + k
                     needleB = needles_lesion[combination_angles[1]] + k
 
-
-                    if PlannedTargetPoint[combination_angles[0]].all() and PlannedTargetPoint[
-                        combination_angles[0]].all():
+                    if PlannedTargetPoint[combination_angles[0]].all() and PlannedTargetPoint[combination_angles[0]].all():
                         angle_planned = AngleNeedles.angle_between(PlannedEntryPoint[combination_angles[0]],
                                                                    PlannedTargetPoint[combination_angles[0]],
                                                                    PlannedEntryPoint[combination_angles[1]],

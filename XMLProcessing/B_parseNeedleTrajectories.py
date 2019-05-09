@@ -186,9 +186,9 @@ def IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_f
         # find if the needle exists already in the patient repository
         # for IRE needles the distance shouldn't be larger than 3 (in theory)
         if needle_type is "IRE":
-            needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=1) # distance is in mm
+            needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=0.1)  # distance is in mm
         elif needle_type is "MWA":
-            needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=3) # distance is in mm
+            needle = lesion.findNeedle(needlelocation=tp_planning, DISTANCE_BETWEEN_NEEDLES=2)  # distance is in mm
         # case for new needle not currently saved in database
         if needle is None:
             # add the needle to lesion class and init its parameters

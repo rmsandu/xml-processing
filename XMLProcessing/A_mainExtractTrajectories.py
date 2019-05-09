@@ -1,9 +1,3 @@
-
-
-
-
-
-
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 27 16:49:22 2018
@@ -16,6 +10,7 @@ example how to call the function reading from Keyboard
 # flag_segmentation_info = 'n'
 """
 import os
+import sys
 import pandas as pd
 from time import strftime
 from collections import defaultdict
@@ -27,15 +22,18 @@ import dataframe_metrics
 
 # %%
 
+
 def call_needle_extraction(rootdir):
 
     for subdir, dirs, files in os.walk(rootdir):
-
-        for file in sorted(files): # sort files by date of creation
+        # sorted: files by date of creation
+        for file in sorted(files):
 
             fileName, fileExtension = os.path.splitext(file)
 
-            # the tumour segmentation path is in the "Plan.xml" and the ablation segmentation path is in the "Validation.xml"
+            # the tumour segmentation path is in the "Plan.xml"
+            # the ablation segmentation path is in the "Validation.xml"
+
             if fileExtension.lower().endswith('.xml') and (
                     'validation' in fileName.lower() or 'plan' in fileName.lower()):
 
@@ -52,7 +50,7 @@ def call_needle_extraction(rootdir):
                     # parse trajectories and other patient specific info
                     trajectories_info = parseNeedleTrajectories.II_parseTrajectories(xmlobj.trajectories)
                     if trajectories_info.trajectories is None:
-                        continue # no trajectories found in this xml, go on to the next file.
+                        continue  # no trajectories found in this xml, go on to the next file.
                     else:
                         # check if patient exists first, if yes, instantiate new object, otherwise retrieve it from list
                         patients = patientsRepo.getPatients()
@@ -64,7 +62,6 @@ def call_needle_extraction(rootdir):
                             patient = patientsRepo.addNewPatient(pat_id,
                                                                  xmlobj.patient_name)
                             # instantiate extract registration
-                            # TODO: write registration matrix to Excel
                             parseNeedleTrajectories.II_extractRegistration(xmlobj.trajectories, patient, xmlfilename)
                             # add intervention data
                             parseNeedleTrajectories.III_parseTrajectory(trajectories_info.trajectories, patient,
@@ -79,14 +76,13 @@ def call_needle_extraction(rootdir):
                                                                         trajectories_info.time_intervention,
                                                                         trajectories_info.cas_version)
                             # add the registration, if several exist (hopefully not)
-                            # TODO: add flag in excel if registration existing (write registration to excel)
                             parseNeedleTrajectories.II_extractRegistration(xmlobj.trajectories, patient[0], xmlfilename)
 
 
 def call_extract_class_2_df(patients):
     """
     extract information from the object classes into pandas dataframe
-    :param patients:
+    :param patients: dataframe
     :return: dataframe of patient and needle treatment info
     """
     for patient in patients:
@@ -112,7 +108,7 @@ def call_extract_class_2_df(patients):
         for keys, vals in needle_trajectories.items():
             for val in vals:
                 needles_unpacked_list[keys].append(val)
-    # conver to DataFrame for easier writing to Excel
+    # convert to DataFrame for easier writing to Excel
     df_patients_trajectories = pd.DataFrame(needles_unpacked_list)
     return df_patients_trajectories
     print("Success unpacking from class to dataframe....")
@@ -120,12 +116,14 @@ def call_extract_class_2_df(patients):
 
 def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilename):
     """
-    write to excel final list.
+    write clean output to excel.
     :param df_patients_trajectories:
-    :return:  simplified dataframe and Excel file to disk
+    :param flag_segmentation_info:
+    :param outfilename:
+    :return:
     """
     timestr = strftime("%Y%m%d-%H%M%S")
-    filename = outfilename + '_' +timestr + '.xlsx'
+    filename = outfilename + '_' + timestr + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
 
@@ -133,8 +131,8 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
         df_final = df_patients_trajectories
     else:
         # discard the segmentation information from the final output Excel when not needed
-        df_final = df_patients_trajectories.iloc[:,0:19].copy() # use copy to avoid the case where changing df1 also changes df
-    # df_final.sort_values(by=['PatientName'], inplace=True)
+        df_final = df_patients_trajectories.iloc[:, 0:19].copy()
+
     # some numerical conversions
     df_final.apply(pd.to_numeric, errors='ignore', downcast='float').info()
     df_final[['LateralError']] = df_final[['LateralError']].apply(pd.to_numeric, downcast='float')
@@ -145,25 +143,24 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
     df_final[["TimeIntervention"]] = df_final[["TimeIntervention"]].astype(str)
     df_final.to_excel(writer, sheet_name='Paths', index=False, na_rep='NaN')
     writer.save()
-    print("Succes writing info to Excel file....")
+    print("Success writing info to Excel file....")
     return df_final
 
 
 #%%
 if __name__ == '__main__':
 
-    # rootdir = "C:\test_patient"
-    # outfilename =  "info_logs"
-    # flag_IRE = False
-    # flag_MWA = True
-    # flag_segmentation_info =  True
+    rootdir = r"C:"
+    outfilename = "info_logs_ire__new"
+    flag_IRE = True
+    flag_MWA = False
+    flag_segmentation_info = False
 
-    rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
-    outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
-    # todo: better questions
-    flag_IRE = readInputKeyboard.getChoiceYesNo('Do you want to analyze the IRE needles ?', ['Y', 'N'])
-    flag_MWA = readInputKeyboard.getChoiceYesNo('Do you want to analyze the MWA Needles ?', ['Y', 'N'])
-    flag_segmentation_info = readInputKeyboard.getChoiceYesNo('Do you want to have the segmentation information ?', ['Y', 'N'])
+    # rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
+    # outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
+    # flag_IRE = readInputKeyboard.getChoiceYesNo('Do you want to analyze the IRE needles ?', ['Y', 'N'])
+    # flag_MWA = readInputKeyboard.getChoiceYesNo('Do you want to analyze the MWA Needles ?', ['Y', 'N'])
+    # flag_segmentation_info = readInputKeyboard.getChoiceYesNo('Do you want to have the segmentation information ?', ['Y', 'N'])
 
     # instanstiate the patient repository class
     patientsRepo = C_NeedlesInfoClasses.PatientRepo()
@@ -183,26 +180,42 @@ if __name__ == '__main__':
         print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure.')
 
     try:
-        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories, flag_IRE, flag_MWA, flag_segmentation_info)
-        print("Dataframe cleaning successful. Lesion and Needle Nr updated...")
+        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
+                                                                  flag_IRE,
+                                                                  flag_MWA,
+                                                                  flag_segmentation_info)
+        print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
+
     except Exception as e:
         print(repr(e))
-        print('No Needle Trajectories found in the input file directory!')
+        print('No Needle Trajectories found in the input file directory!...Exiting program...')
+        # exit program
+        sys.exit()
 
     if flag_IRE is True:
-        #%% compute area between IRE Needles
-        # TODO: calculate angles
+        # %% compute area between IRE Needles
         df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
-        df_areas = df_area_between_needles[['PatientID', 'LesionNr','NeedleCount', 'Planned Area', 'Validation Area']]
-        #%% compute angles between IRE Needles
+        df_areas = df_area_between_needles[
+            ['PatientID', 'LesionNr', 'NeedleCount', 'Planned Area', 'Validation Area']]
+        # %% compute angles between IRE Needles
         df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
         dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
         # write to Excel File...
-        dataframe_metrics.write_toExcelFile(rootdir=rootdir, outfile=outfilename, df_TPEs_validated=df_TPEs_validated,
-                                            dfPatientsTrajectories=df_patients_trajectories, df_angles=df_angles, df_areas=df_areas)
+
+        dataframe_metrics.write_toExcelFile(rootdir=rootdir,
+                                            outfile=outfilename,
+                                            df_needles_validated=df_TPEs_validated,
+                                            dfPatientsTrajectories=df_patients_trajectories,
+                                            df_angles=df_angles,
+                                            df_areas=df_areas)
+
+        print('Success! Extracting and Writing Information to the Excel File.....')
 
     else:
         # write to Excel file all the information extracted without the df_angles and df_areas
         dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-        print('Succes! Extracting and Writing Information to the Excel File.....')
+        print('Success! Extracting and Writing Information to the Excel File.....')
+
+
+
 
