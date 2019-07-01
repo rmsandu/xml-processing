@@ -10,8 +10,8 @@ import time
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import extractAreaNeedles
-import D_extractIREAngles
+import XMLProcessing.extractAreaNeedles as extractAreaNeedles
+import XMLProcessing.D_extractIREAngles as D_extractIREAngles
 
 pd.options.display.float_format = '{:.2f}'.format
 
@@ -104,7 +104,21 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
         # drop the non-validated needles
         # assuming that needles that were actually used for the surgery were ALL validated
         # double verification: remove needle row if both Euclidean Error and both Tumor and Ablation Path are empty
-        dfPatientsTrajectories.dropna(subset=['EuclideanError', 'TumorPath', 'AblationPath'], how='all', inplace=True)
+        # todo 1: add message that all needles have not been validated
+        # todo 2: add message which needles have not been validated if multiple needles are present
+        #  todo: add message that these needles are lacking a segmntation try:
+        # todo: should I do this at patient level???? definetely
+        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError', 'TumorPath', 'AblationPath'], how='all', inplace=True)
+
+        # test that needles have actually been validated:
+        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all', inplace=True)
+
+        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['TumorPath', 'AblationPath'], how='all', inplace=True)
+
+        if dfTPEs_validated is None:
+            print("No Segmentations Found For Patient: ", )
+            return None
+
     else:
         # select all columns except those that have segmentation information
         # dfTPEs.dropna(subset=['EuclideanError'], inplace=True)

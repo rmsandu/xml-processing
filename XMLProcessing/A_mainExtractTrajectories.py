@@ -150,11 +150,11 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
 #%%
 if __name__ == '__main__':
 
-    rootdir = r"C:"
-    outfilename = "info_logs_ire__new"
-    flag_IRE = True
-    flag_MWA = False
-    flag_segmentation_info = False
+    rootdir = r"C:\tmp_patients\Pat_MAV_GRON_G01"
+    outfilename = "info_needle_trajectories__"
+    flag_IRE = False
+    flag_MWA = True
+    flag_segmentation_info = True
 
     # rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
     # outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
@@ -179,18 +179,19 @@ if __name__ == '__main__':
     else:
         print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure.')
 
-    try:
-        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
+    # try:
+    df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
                                                                   flag_IRE,
                                                                   flag_MWA,
                                                                   flag_segmentation_info)
-        print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
+    print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
 
-    except Exception as e:
-        print(repr(e))
-        print('No Needle Trajectories found in the input file directory!...Exiting program...')
-        # exit program
-        sys.exit()
+    # except Exception as e:
+    #     print(repr(e))
+    #
+    #     print('No Needle Trajectories found in the input file directory!...Exiting program...')
+    #     # exit program
+    #     sys.exit()
 
     if flag_IRE is True:
         # %% compute area between IRE Needles
