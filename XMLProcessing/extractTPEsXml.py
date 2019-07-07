@@ -4,7 +4,7 @@ Created on Thu Feb 15 11:17:01 2018
 
 @author: Raluca Sandu
 """
-from elementExistsXml import elementExists
+from XMLProcessing.elementExistsXml import elementExists
 
 
 def extractTPES(measurement):

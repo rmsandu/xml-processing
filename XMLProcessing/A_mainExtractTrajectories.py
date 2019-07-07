@@ -15,10 +15,10 @@ import pandas as pd
 from time import strftime
 from collections import defaultdict
 
-import readInputKeyboard
-import C_NeedlesInfoClasses
-import B_parseNeedleTrajectories as parseNeedleTrajectories
-import dataframe_metrics
+import XMLProcessing.readInputKeyboard as readInputKeyboard
+import XMLProcessing.C_NeedlesInfoClasses as C_NeedlesInfoClasses
+import XMLProcessing.B_parseNeedleTrajectories as parseNeedleTrajectories
+import XMLProcessing.dataframe_metrics as dataframe_metrics
 
 # %%
 
@@ -147,10 +147,9 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
     return df_final
 
 
-#%%
 if __name__ == '__main__':
 
-    rootdir = r"C:\tmp_patients\Pat_MAV_GRON_G01"
+    rootdir = r"C:\REGENSBURG\REG_I\Pat_Dunkes Anton_01950149"
     outfilename = "info_needle_trajectories__"
     flag_IRE = False
     flag_MWA = True
@@ -181,9 +180,9 @@ if __name__ == '__main__':
 
     # try:
     df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
-                                                                  flag_IRE,
-                                                                  flag_MWA,
-                                                                  flag_segmentation_info)
+                                                              flag_IRE,
+                                                              flag_MWA,
+                                                              flag_segmentation_info)
     print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
 
     # except Exception as e:

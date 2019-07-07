@@ -106,28 +106,30 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
         # double verification: remove needle row if both Euclidean Error and both Tumor and Ablation Path are empty
         # todo 1: add message that all needles have not been validated
         # todo 2: add message which needles have not been validated if multiple needles are present
-        #  todo: add message that these needles are lacking a segmntation try:
+        # todo: add message that these needles are lacking a segmntation try:
         # todo: should I do this at patient level???? definetely
-        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError', 'TumorPath', 'AblationPath'], how='all', inplace=True)
+        # dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError', 'TumorPath', 'AblationPath'], how='all', inplace=True)
 
         # test that needles have actually been validated:
-        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all', inplace=True)
-
+        # dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all', inplace=True)
         dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['TumorPath', 'AblationPath'], how='all', inplace=True)
 
         if dfTPEs_validated is None:
-            print("No Segmentations Found For Patient: ", )
+            print("No Segmentations Found For Patient: ", 'TODO write patient name here' )
             return None
 
     else:
         # select all columns except those that have segmentation information
-        # dfTPEs.dropna(subset=['EuclideanError'], inplace=True)
-        dfTPEs_validated = dfPatientsTrajectories[dfPatientsTrajectories['EuclideanError'].notnull() | (
-                    dfPatientsTrajectories['ReferenceNeedle'])]
+        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all', inplace=True)
+        if dfTPEs_validated is None:
+            print("None of the Needles were validated!!!!!")
+            dfTPES_validated = dfPatientsTrajectories
 
     if flag_IRE is True and flag_MWA is False:
         # select only IRE Needles, drop the MWAs
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'IRE']
+        dfTPEs_validated = dfPatientsTrajectories[dfPatientsTrajectories['EuclideanError'].notnull() | (
+            dfPatientsTrajectories['ReferenceNeedle'])]
         # select rows where the needle is not a reference, but part of child trajectories. drop the other rows
         # df_TPEs_validated = dfIREs[~(dfIREs.ReferenceNeedle)]
         # df_TPEs_validated = dfIREs
@@ -137,7 +139,7 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
 
     else:
         # both flags are false, extract all type of needles
-        df_needles_validated = dfTPEs_validated .copy()
+        df_needles_validated = dfTPEs_validated.copy()
 
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()
@@ -193,7 +195,10 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     :return: nothing, writes Excel File to Disk
     """
     #%% Group statistics
-    df_TPEs_validated = df_needles_validated[~df_needles_validated.ReferenceNeedle]
+    try:
+        df_TPEs_validated = df_needles_validated[~df_needles_validated.ReferenceNeedle]
+    except AttributeError:
+        df_TPEs_validated = df_needles_validated
     grpd_needles = df_TPEs_validated.groupby(['PatientID', 'NeedleNr']).size().to_frame('Needle Count')
     df_count = df_TPEs_validated.groupby(['PatientID', 'LesionNr']).size().to_frame('NeedleCount')
     # question: how many needles (pairs) were used per lesion?
@@ -207,7 +212,7 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     # how many patients & how many lesions ?
     dfLesionsTotal = df_TPEs_validated.groupby(['PatientID']).LesionNr.max().to_frame('Total Lesions')
     dfLesionsTotalIndex = dfLesionsTotal.add_suffix(' Count').reset_index()
-    # %%  write to Excel File
+    ## write to Excel File
     timestr = time.strftime("%Y%m%d-%H%M%S")
     filename = outfile + timestr + '.xlsx'
     # filename = outfile + '.xlsx'

@@ -11,20 +11,14 @@ import numpy as np
 import untangle as ut
 from collections import defaultdict
 
-#Raluca's Libraries
+
 import xml.etree.ElementTree as ET
-from extractTPEsXml import extractTPES
-from elementExistsXml import elementExists
-from splitAllPaths import splitall
+from XMLProcessing.extractTPEsXml import extractTPES
+from XMLProcessing.elementExistsXml import elementExists
+from XMLProcessing.splitAllPaths import splitall
 
 
-#Trini's Libraries
-# import xml.etree.ElementTree as ET
-# from XMLProcessing.extractTPEsXml import extractTPES
-# from XMLProcessing.elementExistsXml import elementExists
-# from XMLProcessing.splitAllPaths import splitall
-
-# %%
+#%%
 
 def extract_patient_id(filename, patient_id_xml, patient_name_flag=True):
     """ Extract patient id & patient name from folder name.

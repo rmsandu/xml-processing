@@ -11,7 +11,7 @@ import sys
 import string
 import shutil
 import zipfile
-from splitAllPaths import splitall
+from XMLProcessing.splitAllPaths import splitall
 
 
 def copytree(src, dst, symlinks=False, ignore=None):
