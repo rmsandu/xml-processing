@@ -46,7 +46,8 @@ def compute_angles(df):
 
     # convert to dataframe & make columns numerical so Excel operations are allowed
     df_angles['A_dash'] = '-'
-    df_angles['Electrode Pair'] = df_angles['NeedleA'].astype(str) + df_angles['A_dash'] + df_angles['NeedleB'].astype(str)
+    df_angles['Electrode Pair'] = df_angles['NeedleA'].astype(str) + df_angles['A_dash'] + df_angles['NeedleB'].astype(
+        str)
     df_angles = df_angles[['PatientID', 'LesionNr', 'Electrode Pair', 'Planned Angle', 'Validation Angle']]
     df_angles.sort_values(by=['PatientID', 'LesionNr'], inplace=True)
     df_angles.apply(pd.to_numeric, errors='ignore', downcast='float').info()
@@ -71,7 +72,7 @@ def plot_boxplot_angles(df_angles, rootdir):
     plt.savefig(savepath_svg, pad_inches=0)
 
 
-def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segmentation_info):
+def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_redcap):
     """
     Clean the Dataframe. Keep only validated (TPEs present) trajectories. Correct the lesion and needle count.
     :param dfPatientsTrajectories:
@@ -100,32 +101,17 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
 
     dfPatientsTrajectories.sort_values(by=['PatientID', 'LesionNr', 'NeedleNr'], inplace=True)
 
-    if flag_segmentation_info is True:
-        # drop the non-validated needles
-        # assuming that needles that were actually used for the surgery were ALL validated
-        # double verification: remove needle row if both Euclidean Error and both Tumor and Ablation Path are empty
-        # todo 1: add message that all needles have not been validated
-        # todo 2: add message which needles have not been validated if multiple needles are present
-        # todo: add message that these needles are lacking a segmntation try:
-        # todo: should I do this at patient level???? definetely
-        # dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError', 'TumorPath', 'AblationPath'], how='all', inplace=True)
+    dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all')
+    dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
+    dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], inplace=True)
 
-        # test that needles have actually been validated:
-        # dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all', inplace=True)
-        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['TumorPath', 'AblationPath'], how='all', inplace=True)
-
-        if dfTPEs_validated is None:
-            print("No Segmentations Found For Patient: ", 'TODO write patient name here' )
-            return None
-
-    else:
-        # select all columns except those that have segmentation information
-        dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all', inplace=True)
-        if dfTPEs_validated is None:
-            print("None of the Needles were validated!!!!!")
-            dfTPES_validated = dfPatientsTrajectories
+    # dfTPEs_validated.iloc[0].PlannedTargetPoint  ==  dfTPEs_validated.iloc[1].PlannedTargetPoint
+    if dfTPEs_validated.empty:
+        print("None of the Needles were validated at this patient directory:", dfPatientsTrajectories.iloc[0].PatientID)
+        return
 
     if flag_IRE is True and flag_MWA is False:
+        # TODO: fix later
         # select only IRE Needles, drop the MWAs
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'IRE']
         dfTPEs_validated = dfPatientsTrajectories[dfPatientsTrajectories['EuclideanError'].notnull() | (
@@ -136,10 +122,13 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, flag_segment
 
     elif flag_MWA is True and flag_IRE is False:
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'MWA']
+        if len(df_needles_validated) != no_lesions_redcap:
+            print(str(no_lesions_redcap - len(df_needles_validated)), ' needles were not validated for this patient:',
+                  dfPatientsTrajectories.iloc[0].PatientID)
 
-    else:
-        # both flags are false, extract all type of needles
-        df_needles_validated = dfTPEs_validated.copy()
+    # else:
+    #     # both flags are false, extract all type of needles
+    #     df_needles_validated = dfTPEs_validated.copy()
 
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()
@@ -194,7 +183,7 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     :param df_areas:
     :return: nothing, writes Excel File to Disk
     """
-    #%% Group statistics
+    # %% Group statistics
     try:
         df_TPEs_validated = df_needles_validated[~df_needles_validated.ReferenceNeedle]
     except AttributeError:
@@ -214,7 +203,7 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     dfLesionsTotalIndex = dfLesionsTotal.add_suffix(' Count').reset_index()
     ## write to Excel File
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    filename = outfile + timestr + '.xlsx'
+    filename = outfile + '.xlsx'
     # filename = outfile + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
@@ -222,8 +211,8 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     df_TPEs_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
 
     df_TPEs = df_TPEs_validated[['PatientID', 'PatientName', 'LesionNr', 'NeedleNr', 'NeedleType',
-                                       'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
-                                       'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
+                                 'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
+                                 'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
     df_TPEs.to_excel(writer, sheet_name='TPEs_Only', index=False, na_rep='NaN')
 
     dfLesionsTotalIndex.to_excel(writer, sheet_name='LesionsTotal', index=False, na_rep='Nan')
@@ -235,4 +224,3 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
         df_areas.to_excel(writer, sheet_name='Areas', index=False, na_rep='NaN')
 
     writer.save()
-

@@ -12,6 +12,7 @@ example how to call the function reading from Keyboard
 import os
 import sys
 import pandas as pd
+import numpy as np
 import argparse
 from time import strftime
 from collections import defaultdict
@@ -112,39 +113,6 @@ def call_extract_class_2_df(patients):
     print("Success unpacking from class to dataframe....")
 
 
-def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilename):
-    """
-    write clean output to excel.
-    :param df_patients_trajectories:
-    :param flag_segmentation_info:
-    :param outfilename:
-    :return:
-    """
-    timestr = strftime("%Y%m%d-%H%M%S")
-    filename = outfilename + '_' + timestr + '.xlsx'
-    filepathExcel = os.path.join(rootdir, filename)
-    writer = pd.ExcelWriter(filepathExcel)
-
-    if flag_segmentation_info is True:
-        df_final = df_patients_trajectories
-    else:
-        # discard the segmentation information from the final output Excel when not needed
-        df_final = df_patients_trajectories.iloc[:, 0:19].copy()
-
-    # some numerical conversions
-    df_final.apply(pd.to_numeric, errors='ignore', downcast='float').info()
-    df_final[['LateralError']] = df_final[['LateralError']].apply(pd.to_numeric, downcast='float')
-    df_final[['AngularError']] = df_final[['AngularError']].apply(pd.to_numeric, downcast='float')
-    df_final[['EuclideanError']] = df_final[['EuclideanError']].apply(pd.to_numeric, downcast='float')
-    df_final[['LongitudinalError']] = df_final[['LongitudinalError']].apply(pd.to_numeric, downcast='float')
-    df_final[["PatientID"]] = df_final[["PatientID"]].astype(str)
-    df_final[["TimeIntervention"]] = df_final[["TimeIntervention"]].astype(str)
-    df_final.to_excel(writer, sheet_name='Paths', index=False, na_rep='NaN')
-    writer.save()
-    print("Success writing info to Excel file....")
-    return df_final
-
-
 if __name__ == '__main__':
 
     ap = argparse.ArgumentParser()
@@ -155,9 +123,14 @@ if __name__ == '__main__':
     flag_IRE = False
     flag_MWA = True
     flag_segmentation_info = False
+    outfilename = "tpes"
 
     args = vars(ap.parse_args())
 
+    if args['redcap_file'] is not None:
+        print('Recap File provided for number of lesions treated and no. antenna insertions')
+    else:
+        sys.exit()
     if args["rootdir"] is not None:
         print("Single patient folder processing, path to folder: ", args["rootdir"])
     elif (args["input_batch_proc"]) is not None and (args["rootdir"] is None):
@@ -166,9 +139,10 @@ if __name__ == '__main__':
         print("no input values provided either for single patient processing or batch processing. System Exiting")
         sys.exit()
 
+    df_redcap = pd.read_excel(args['redcap_file'])
+
+    #%% SINGLE PATIENT PROCESSING. instanstiate the patient repository class
     rootdir = args['rootdir']
-    outfilename = "tpes"
-    # instanstiate the patient repository class
     patientsRepo = C_NeedlesInfoClasses.PatientRepo()
     pat_ids = []
     pat_id = 0
@@ -182,7 +156,6 @@ if __name__ == '__main__':
 
     if patients:
         df_patients_trajectories = call_extract_class_2_df(patients)
-        print(df_patients_trajectories)
         outfilename = outfilename + '_raw_.xlsx'
         filepath_excel = os.path.join(rootdir, outfilename)
         writer = pd.ExcelWriter(filepath_excel)
@@ -193,11 +166,20 @@ if __name__ == '__main__':
         print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
               rootdir)
 
+    Patient_ID = df_patients_trajectories.iloc[0].PatientID
+    try:
+        Patient_ID_xml = Patient_ID.split('-')[1]
+    except Exception:
+        Patient_ID_xml = Patient_ID
+    df_patient_redcap = df_redcap[df_redcap.Patient_ID == Patient_ID_xml]
+    for idx, row in df_patient_redcap.iterrows():
+        if not np.isnan(row['Number of ablated lesions']):
+            no_lesions_redcap = row['Number of ablated lesions']
     # try:
     df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
                                                               flag_IRE,
                                                               flag_MWA,
-                                                              flag_segmentation_info)
+                                                              no_lesions_redcap)
     print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
 
     dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
