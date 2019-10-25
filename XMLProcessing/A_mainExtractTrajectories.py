@@ -12,17 +12,15 @@ example how to call the function reading from Keyboard
 import os
 import sys
 import pandas as pd
+import argparse
 from time import strftime
 from collections import defaultdict
 
-import XMLProcessing.readInputKeyboard as readInputKeyboard
 import XMLProcessing.C_NeedlesInfoClasses as C_NeedlesInfoClasses
 import XMLProcessing.B_parseNeedleTrajectories as parseNeedleTrajectories
 import XMLProcessing.dataframe_metrics as dataframe_metrics
 
 # %%
-
-
 def call_needle_extraction(rootdir):
 
     for subdir, dirs, files in os.walk(rootdir):
@@ -149,18 +147,27 @@ def  write_df_2Excel(df_patients_trajectories, flag_segmentation_info, outfilena
 
 if __name__ == '__main__':
 
-    rootdir = r"C:\REGENSBURG\REG_I\Pat_Dunkes Anton_01950149"
-    outfilename = "info_needle_trajectories__"
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-i", "--rootdir", required=False, help="path to the patient folder to be processed")
+    ap.add_argument("-b", "--input_batch_proc", required=False, help="input excel file for batch processing")
+    ap.add_argument('-r', "--redcap_file", required=False, help="redcap file for no of antenna insertions")
+
     flag_IRE = False
     flag_MWA = True
-    flag_segmentation_info = True
+    flag_segmentation_info = False
 
-    # rootdir = os.path.normpath(readInputKeyboard.getNonEmptyString("Root Directory File Path"))
-    # outfilename = readInputKeyboard.getNonEmptyString("Name of the ouput xlsx file ")
-    # flag_IRE = readInputKeyboard.getChoiceYesNo('Do you want to analyze the IRE needles ?', ['Y', 'N'])
-    # flag_MWA = readInputKeyboard.getChoiceYesNo('Do you want to analyze the MWA Needles ?', ['Y', 'N'])
-    # flag_segmentation_info = readInputKeyboard.getChoiceYesNo('Do you want to have the segmentation information ?', ['Y', 'N'])
+    args = vars(ap.parse_args())
 
+    if args["rootdir"] is not None:
+        print("Single patient folder processing, path to folder: ", args["rootdir"])
+    elif (args["input_batch_proc"]) is not None and (args["rootdir"] is None):
+        print("Batch Processing Enabled, path to csv: ", args["input_batch_proc"])
+    else:
+        print("no input values provided either for single patient processing or batch processing. System Exiting")
+        sys.exit()
+
+    rootdir = args['rootdir']
+    outfilename = "tpes"
     # instanstiate the patient repository class
     patientsRepo = C_NeedlesInfoClasses.PatientRepo()
     pat_ids = []
@@ -175,8 +182,16 @@ if __name__ == '__main__':
 
     if patients:
         df_patients_trajectories = call_extract_class_2_df(patients)
+        print(df_patients_trajectories)
+        outfilename = outfilename + '_raw_.xlsx'
+        filepath_excel = os.path.join(rootdir, outfilename)
+        writer = pd.ExcelWriter(filepath_excel)
+        print(filepath_excel)
+        df_patients_trajectories.to_excel(writer, index=False)
+        writer.save()
     else:
-        print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure.')
+        print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
+              rootdir)
 
     # try:
     df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
@@ -185,12 +200,11 @@ if __name__ == '__main__':
                                                               flag_segmentation_info)
     print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
 
-    # except Exception as e:
-    #     print(repr(e))
-    #
-    #     print('No Needle Trajectories found in the input file directory!...Exiting program...')
-    #     # exit program
-    #     sys.exit()
+    dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
+
+    if flag_MWA is True:
+        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
+        print('Success! Extracting and Writing Information to the Excel File.....')
 
     if flag_IRE is True:
         # %% compute area between IRE Needles
@@ -211,10 +225,9 @@ if __name__ == '__main__':
 
         print('Success! Extracting and Writing Information to the Excel File.....')
 
-    else:
+        #TODO:
         # write to Excel file all the information extracted without the df_angles and df_areas
-        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-        print('Success! Extracting and Writing Information to the Excel File.....')
+
 
 
 
