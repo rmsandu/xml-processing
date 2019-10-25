@@ -6,7 +6,7 @@ for IRE Angles
 @author: Raluca Sandu
 """
 import os
-import time
+from datetime import datetime
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -102,8 +102,8 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
     dfPatientsTrajectories.sort_values(by=['PatientID', 'LesionNr', 'NeedleNr'], inplace=True)
 
     dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all')
-    dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
-    dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], inplace=True)
+    # dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
+    # dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], inplace=True)
 
     # dfTPEs_validated.iloc[0].PlannedTargetPoint  ==  dfTPEs_validated.iloc[1].PlannedTargetPoint
     if dfTPEs_validated.empty:
@@ -122,13 +122,20 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
 
     elif flag_MWA is True and flag_IRE is False:
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'MWA']
-        if len(df_needles_validated) != no_lesions_redcap:
+        if len(df_needles_validated) > no_lesions_redcap:
+            df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
+                lambda x: x.split(' ')[0])
+            df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
+                lambda x: x.replace('_', ' '))
+            df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
+                lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
+            most_recent_date = df_needles_validated['TimeDateIntervention'].max()
+            df_needles_validated = df_needles_validated[df_needles_validated['TimeDateIntervention'] == most_recent_date]
+
+        elif len(df_needles_validated) < no_lesions_redcap:
             print(str(no_lesions_redcap - len(df_needles_validated)), ' needles were not validated for this patient:',
                   dfPatientsTrajectories.iloc[0].PatientID)
 
-    # else:
-    #     # both flags are false, extract all type of needles
-    #     df_needles_validated = dfTPEs_validated.copy()
 
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()
@@ -202,13 +209,12 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     dfLesionsTotal = df_TPEs_validated.groupby(['PatientID']).LesionNr.max().to_frame('Total Lesions')
     dfLesionsTotalIndex = dfLesionsTotal.add_suffix(' Count').reset_index()
     ## write to Excel File
-    timestr = time.strftime("%Y%m%d-%H%M%S")
     filename = outfile + '.xlsx'
     # filename = outfile + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
-    dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
     df_TPEs_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
+    dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
 
     df_TPEs = df_TPEs_validated[['PatientID', 'PatientName', 'LesionNr', 'NeedleNr', 'NeedleType',
                                  'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',

@@ -156,12 +156,6 @@ if __name__ == '__main__':
 
     if patients:
         df_patients_trajectories = call_extract_class_2_df(patients)
-        outfilename = outfilename + '_raw_.xlsx'
-        filepath_excel = os.path.join(rootdir, outfilename)
-        writer = pd.ExcelWriter(filepath_excel)
-        print(filepath_excel)
-        df_patients_trajectories.to_excel(writer, index=False)
-        writer.save()
     else:
         print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
               rootdir)
@@ -207,8 +201,6 @@ if __name__ == '__main__':
 
         print('Success! Extracting and Writing Information to the Excel File.....')
 
-        #TODO:
-        # write to Excel file all the information extracted without the df_angles and df_areas
 
 
 
