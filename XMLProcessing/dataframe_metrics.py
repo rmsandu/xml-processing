@@ -104,7 +104,6 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
     dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all')
     # dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
     # dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], inplace=True)
-
     # dfTPEs_validated.iloc[0].PlannedTargetPoint  ==  dfTPEs_validated.iloc[1].PlannedTargetPoint
     if dfTPEs_validated.empty:
         print("None of the Needles were validated at this patient directory:", dfPatientsTrajectories.iloc[0].PatientID)
@@ -122,31 +121,30 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
 
     elif flag_MWA is True and flag_IRE is False:
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'MWA']
-        if len(df_needles_validated) > no_lesions_redcap:
-            df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
-                lambda x: x.split(' ')[0])
-            df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
-                lambda x: x.replace('_', ' '))
-            df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
-                lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
-            most_recent_date = df_needles_validated['TimeDateIntervention'].max()
-            df_needles_validated = df_needles_validated[df_needles_validated['TimeDateIntervention'] == most_recent_date]
+        # execute only if redcap file has been provided
+        if no_lesions_redcap != -1 :
+            if len(df_needles_validated) > no_lesions_redcap:
+                df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
+                    lambda x: x.split(' ')[0])
+                df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
+                    lambda x: x.replace('_', ' '))
+                df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
+                    lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
+                most_recent_date = df_needles_validated['TimeDateIntervention'].max()
+                df_needles_validated = df_needles_validated[df_needles_validated['TimeDateIntervention'] == most_recent_date]
 
-        elif len(df_needles_validated) < no_lesions_redcap:
-            print(str(no_lesions_redcap - len(df_needles_validated)), ' needles were not validated for this patient:',
-                  dfPatientsTrajectories.iloc[0].PatientID)
-
+            elif len(df_needles_validated) < no_lesions_redcap:
+                print(str(no_lesions_redcap - len(df_needles_validated)), ' needles were not validated for this patient:',
+                      dfPatientsTrajectories.iloc[0].PatientID)
 
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()
-
     for PatientIdx, patient in enumerate(patient_unique):
         patient_data = df_needles_validated[df_needles_validated['PatientID'] == patient]
         lesion_unique = patient_data['LesionNr'].unique()
         list_lesion_count_new = []
         NeedleCount = patient_data['NeedleNr'].tolist()
         new_idx_lesion = 1
-
         # update needle nr count for older CAS versions where no reference needle was available
         for l_idx, lesion in enumerate(lesion_unique):
             lesion_data = patient_data[patient_data['LesionNr'] == lesion]
@@ -171,11 +169,9 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
                     list_lesion_count_new.append(new_idx_lesion)
                 else:
                     list_lesion_count_new.append(new_idx_lesion)
-
         # replace the re-calculated lesion count in the final dataframe
         df_needles_validated.loc[
             (df_needles_validated['PatientID'] == patient), ['LesionNr']] = list_lesion_count_new
-
         # replace the new lesion count and remove NaNs in the trajectories as well
         return df_needles_validated
 
@@ -210,7 +206,6 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     dfLesionsTotalIndex = dfLesionsTotal.add_suffix(' Count').reset_index()
     ## write to Excel File
     filename = outfile + '.xlsx'
-    # filename = outfile + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
     df_TPEs_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
@@ -220,7 +215,6 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
                                  'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
                                  'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
     df_TPEs.to_excel(writer, sheet_name='TPEs_Only', index=False, na_rep='NaN')
-
     dfLesionsTotalIndex.to_excel(writer, sheet_name='LesionsTotal', index=False, na_rep='Nan')
     dfNeedlesIndex.to_excel(writer, sheet_name='NeedlesLesion', index=False, na_rep='Nan')
     dfLesionsIndex.to_excel(writer, sheet_name='NeedleFreq', index=False, na_rep='Nan')
