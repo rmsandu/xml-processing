@@ -161,7 +161,40 @@ if __name__ == '__main__':
             if len(patient_dir_paths) > 0:
                 for rootdir in patient_dir_paths:
                     rootdir = os.path.normpath(rootdir)
-                    # todo repeat the code for single processing
+                    patientsRepo = C_NeedlesInfoClasses.PatientRepo()
+                    pat_ids = []
+                    pat_id = 0
+                    # call script for extracting needle trajectories from XML
+                    call_needle_extraction(rootdir)
+                    patients = patientsRepo.getPatients()
+                    df_patients_trajectories = None
+                    needles_list = []
+                    if patients:
+                        df_patients_trajectories = call_extract_class_2_df(patients)
+                    else:
+                        print(
+                            'No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
+                            rootdir)
+                    Patient_ID = df_patients_trajectories.iloc[0].PatientID
+                    try:
+                        Patient_ID_xml = Patient_ID.split('-')[1]
+                    except Exception:
+                        Patient_ID_xml = Patient_ID
+                    if flag_redcap:
+                        df_patient_redcap = df_redcap[df_redcap.Patient_ID == Patient_ID_xml]
+                        for idx, row in df_patient_redcap.iterrows():
+                            if not np.isnan(row['Number of ablated lesions']):
+                                no_lesions_redcap = row['Number of ablated lesions']
+                    else:
+                        no_lesions_redcap = -1
+                    df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
+                                                                              flag_IRE,
+                                                                              flag_MWA,
+                                                                              no_lesions_redcap)
+                    if flag_MWA is True:
+                        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated,
+                                                            df_patients_trajectories)
+
     elif args["rootdir"] is not None:
         rootdir = args['rootdir']
         patientsRepo = C_NeedlesInfoClasses.PatientRepo()
@@ -193,9 +226,6 @@ if __name__ == '__main__':
                                                                   flag_IRE,
                                                                   flag_MWA,
                                                                   no_lesions_redcap)
-
-        dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-
         if flag_MWA is True:
             dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
             print('Success! Extracting and Writing Information to the Excel File.....')
@@ -209,7 +239,6 @@ if __name__ == '__main__':
             df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
             dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
             # write to Excel File...
-
             dataframe_metrics.write_toExcelFile(rootdir=rootdir,
                                                 outfile=outfilename,
                                                 df_needles_validated=df_TPEs_validated,
