@@ -5,7 +5,7 @@ Created on Thu Mar  1 11:28:21 2018
 @author: Raluca Sandu
 """
 import numpy as np
-import XMLProcessing.AngleNeedles
+import XMLProcessing.AngleNeedles as AngleNeedles
 from itertools import combinations
 
 

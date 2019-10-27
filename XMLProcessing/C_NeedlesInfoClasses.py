@@ -230,7 +230,7 @@ class Needle:
         if len(seg_found) > 0:
             return seg_found[0]
         else:
-            print("Series UID not in list")
+            #print("Series UID not in list")
             return None
 
     def newSegmentation(self, segmentation_datetime, segmentation_type, source_path, mask_path, needle_type,
@@ -384,8 +384,8 @@ class Needle:
                 # dict_needles['PP_validation'].append(img_registration[0].pp_validation)
                 # dict_needles['RegistrationType'].append(img_registration[0].r_type)
             except Exception as e:
-                print(repr(e))
-                print('patient id: ', patientID)
+                # print(repr(e))
+                # print('patient id: ', patientID)
                 dict_needles['RegistrationFlag'].append(None)
                 dict_needles['RegistrationMatrix'].append(None)
                 # dict_needles['PP_planing'].append(None)
@@ -414,7 +414,7 @@ class NeedleToDictWriter:
 
             return dict_needles
         else:
-            print('No needles for this lesion')
+            #print('No needles for this lesion')
             pass
 
 

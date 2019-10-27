@@ -37,7 +37,8 @@ def extract_patient_id(filename, patient_id_xml, patient_name_flag=True):
     try:
         patient_folder_name = all_paths[ix_patient_folder_name[0]]
     except Exception as e:
-        print(repr(e))
+        pass
+       # print(repr(e))
         # error appears generally because an "UndefinedPatient" folder is created everytime when CAS-One IR is opened.
     patient_id = re.search("\d", patient_folder_name)  # numerical id
     ix_patient_id = int(patient_id.start())
@@ -76,12 +77,13 @@ def I_parseRecordingXML(filename):
             xmlobj.write(filename)
             return 1
         except Exception:
-            print("This file could not be parsed with either library ElementTree or Untangle:", filename)
+            #print("This file could not be parsed with either library ElementTree or Untangle:", filename)
             return None
 
     try:
         patient_id_xml = xmlobj.Eagles.PatientData["patientID"]
     except Exception as e:
+        pass
         print(repr(e))
     patient_id_xml, patient_name = extract_patient_id(filename, patient_id_xml, patient_name_flag=True)
     result = xml_tree(xmlobj, patient_id_xml, patient_name)
@@ -157,6 +159,7 @@ def parse_segmentation(singleTrajectory, needle, needle_type, ct_series, xml_fil
             pass  # do nothing
             # print("segmentation series already exists")
     else:
+        pass
         print("Segmentation Folder Empty")
 
 
@@ -220,6 +223,7 @@ def IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_f
 
         # add the segmentation path if it exists
         if elementExists(singleTrajectory, 'Segmentation'):
+            pass #SKIP SEGMENTATION IDENTICATION
             parse_segmentation(singleTrajectory, needle, needle_type, ct_series, xml_filepath)
 
 
@@ -323,8 +327,9 @@ def II_parseTrajectories(xmlobj):
     try:
         trajectories = xmlobj.Eagles.Trajectories.Trajectory
     except Exception as e:
-        print(repr(e))
-        print('No trajectory was found in the XML file')
+        # pass
+        # print(repr(e))
+        # print('No trajectory was found in the XML file')
         result = tuple_results(None, None, None, None)
         return result
     try:
