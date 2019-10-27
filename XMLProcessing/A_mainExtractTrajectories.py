@@ -4,27 +4,23 @@ Created on Tue Feb 27 16:49:22 2018
 
 @author: Raluca Sandu
 
-example how to call the function reading from Keyboard
-# rootdir = r""
-# outfilename = 'ire_analysis'
-# flag_segmentation_info = 'n'
 """
+import argparse
 import os
 import sys
-import pandas as pd
-import numpy as np
-import argparse
-from time import strftime
 from ast import literal_eval
 from collections import defaultdict
 
-import XMLProcessing.C_NeedlesInfoClasses as C_NeedlesInfoClasses
+import numpy as np
+import pandas as pd
+
 import XMLProcessing.B_parseNeedleTrajectories as parseNeedleTrajectories
+import XMLProcessing.C_NeedlesInfoClasses as C_NeedlesInfoClasses
 import XMLProcessing.dataframe_metrics as dataframe_metrics
+
 
 # %%
 def call_needle_extraction(rootdir):
-
     for subdir, dirs, files in os.walk(rootdir):
         # sorted: files by date of creation
         for file in sorted(files):
@@ -44,7 +40,7 @@ def call_needle_extraction(rootdir):
                 if xmlobj is 1:
                     # file was re-written of weird characters so we need to re-open it.
                     xmlobj = parseNeedleTrajectories.I_parseRecordingXML(xmlfilename)
-                if xmlobj is not None and xmlobj!=1:
+                if xmlobj is not None and xmlobj != 1:
                     pat_id = xmlobj.patient_id_xml
                     pat_ids.append(pat_id)
                     # parse trajectories and other patient specific info
@@ -111,7 +107,6 @@ def call_extract_class_2_df(patients):
     # convert to DataFrame for easier writing to Excel
     df_patients_trajectories = pd.DataFrame(needles_unpacked_list)
     return df_patients_trajectories
-    print("Success unpacking from class to dataframe....")
 
 
 if __name__ == '__main__':
@@ -143,9 +138,9 @@ if __name__ == '__main__':
 
     df_redcap = pd.read_excel(args['redcap_file'])
 
-    #%% SINGLE PATIENT PROCESSING. instanstiate the patient repository class\
+    # %% BATCH Processing
     if args["input_batch_proc"] is not None:
-        print('Flag to anonymize all files:', args["anonymize_all_dcm_files"])
+        list_not_validated = []
         # iterate through each patient and send the root dir filepath
         df = pd.read_excel(args["input_batch_proc"])
         df.drop_duplicates(subset=["Patient_ID"], inplace=True)
@@ -187,14 +182,20 @@ if __name__ == '__main__':
                                 no_lesions_redcap = row['Number of ablated lesions']
                     else:
                         no_lesions_redcap = -1
-                    df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
-                                                                              flag_IRE,
-                                                                              flag_MWA,
-                                                                              no_lesions_redcap)
+                    df_TPEs_validated, list_not_validated = dataframe_metrics.customize_dataframe(
+                        df_patients_trajectories,
+                        flag_MWA,
+                        no_lesions_redcap,
+                        list_not_validated)
                     if flag_MWA is True:
                         dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated,
                                                             df_patients_trajectories)
-
+                    list_not_validated_df = pd.DataFrame(list_not_validated)
+                    filepath = 'list_patients_not_validated.xlsx'
+                    writer = pd.ExcelWriter(filepath)
+                    list_not_validated_df.to_excel(writer, index=False)
+                    writer.save()
+    # SINGLE PATIENT PROCESSING. instanstiate the patient repository class\
     elif args["rootdir"] is not None:
         rootdir = args['rootdir']
         patientsRepo = C_NeedlesInfoClasses.PatientRepo()
@@ -205,11 +206,12 @@ if __name__ == '__main__':
         patients = patientsRepo.getPatients()
         df_patients_trajectories = None
         needles_list = []
+        list_not_validated = []
         if patients:
             df_patients_trajectories = call_extract_class_2_df(patients)
         else:
             print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
-              rootdir)
+                  rootdir)
         Patient_ID = df_patients_trajectories.iloc[0].PatientID
         try:
             Patient_ID_xml = Patient_ID.split('-')[1]
@@ -222,34 +224,10 @@ if __name__ == '__main__':
                     no_lesions_redcap = row['Number of ablated lesions']
         else:
             no_lesions_redcap = -1
-        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
-                                                                  flag_IRE,
-                                                                  flag_MWA,
-                                                                  no_lesions_redcap)
+        df_TPEs_validated, list_not_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
+                                                                                      flag_MWA,
+                                                                                      no_lesions_redcap,
+                                                                                      list_not_validated)
         if flag_MWA is True:
             dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
             print('Success! Extracting and Writing Information to the Excel File.....')
-
-        if flag_IRE is True:
-            # %% compute area between IRE Needles
-            df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
-            df_areas = df_area_between_needles[
-                ['PatientID', 'LesionNr', 'NeedleCount', 'Planned Area', 'Validation Area']]
-            # %% compute angles between IRE Needles
-            df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
-            dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
-            # write to Excel File...
-            dataframe_metrics.write_toExcelFile(rootdir=rootdir,
-                                                outfile=outfilename,
-                                                df_needles_validated=df_TPEs_validated,
-                                                dfPatientsTrajectories=df_patients_trajectories,
-                                                df_angles=df_angles,
-                                                df_areas=df_areas)
-
-            print('Success! Extracting and Writing Information to the Excel File.....')
-
-
-
-
-
-

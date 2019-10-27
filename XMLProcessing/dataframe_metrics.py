@@ -8,10 +8,11 @@ for IRE Angles
 import os
 from datetime import datetime
 
-import pandas as pd
 import matplotlib.pyplot as plt
-import XMLProcessing.extractAreaNeedles as extractAreaNeedles
+import pandas as pd
+
 import XMLProcessing.D_extractIREAngles as D_extractIREAngles
+import XMLProcessing.extractAreaNeedles as extractAreaNeedles
 
 pd.options.display.float_format = '{:.2f}'.format
 
@@ -72,7 +73,7 @@ def plot_boxplot_angles(df_angles, rootdir):
     plt.savefig(savepath_svg, pad_inches=0)
 
 
-def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_redcap):
+def customize_dataframe(dfPatientsTrajectories, flag_MWA, no_lesions_redcap, list_not_validated):
     """
     Clean the Dataframe. Keep only validated (TPEs present) trajectories. Correct the lesion and needle count.
     :param dfPatientsTrajectories:
@@ -108,21 +109,10 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
     if dfTPEs_validated.empty:
         print("None of the Needles were validated at this patient directory:", dfPatientsTrajectories.iloc[0].PatientID)
         return
-
-    if flag_IRE is True and flag_MWA is False:
-        # TODO: fix later
-        # select only IRE Needles, drop the MWAs
-        df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'IRE']
-        dfTPEs_validated = dfPatientsTrajectories[dfPatientsTrajectories['EuclideanError'].notnull() | (
-            dfPatientsTrajectories['ReferenceNeedle'])]
-        # select rows where the needle is not a reference, but part of child trajectories. drop the other rows
-        # df_TPEs_validated = dfIREs[~(dfIREs.ReferenceNeedle)]
-        # df_TPEs_validated = dfIREs
-
-    elif flag_MWA is True and flag_IRE is False:
+    if flag_MWA is True:
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'MWA']
         # execute only if redcap file has been provided
-        if no_lesions_redcap != -1 :
+        if no_lesions_redcap != -1:
             if len(df_needles_validated) > no_lesions_redcap:
                 df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
                     lambda x: x.split(' ')[0])
@@ -131,11 +121,15 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
                 df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
                     lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
                 most_recent_date = df_needles_validated['TimeDateIntervention'].max()
-                df_needles_validated = df_needles_validated[df_needles_validated['TimeDateIntervention'] == most_recent_date]
+                df_needles_validated = df_needles_validated[
+                    df_needles_validated['TimeDateIntervention'] == most_recent_date]
 
             elif len(df_needles_validated) < no_lesions_redcap:
-                print(str(no_lesions_redcap - len(df_needles_validated)), ' needles were not validated for this patient:',
+                print(str(no_lesions_redcap - len(df_needles_validated)),
+                      ' needles were not validated for this patient:',
                       dfPatientsTrajectories.iloc[0].PatientID)
+                list_not_validated.append([str(no_lesions_redcap - len(df_needles_validated)) +
+                      ' needles were not validated for this patient:' +  dfPatientsTrajectories.iloc[0].PatientID])
 
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()
@@ -172,8 +166,9 @@ def customize_dataframe(dfPatientsTrajectories, flag_IRE, flag_MWA, no_lesions_r
         # replace the re-calculated lesion count in the final dataframe
         df_needles_validated.loc[
             (df_needles_validated['PatientID'] == patient), ['LesionNr']] = list_lesion_count_new
+
         # replace the new lesion count and remove NaNs in the trajectories as well
-        return df_needles_validated
+        return df_needles_validated, list_not_validated
 
 
 def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajectories, df_angles=None, df_areas=None):
@@ -186,41 +181,15 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     :param df_areas:
     :return: nothing, writes Excel File to Disk
     """
-    # %% Group statistics
-    try:
-        df_TPEs_validated = df_needles_validated[~df_needles_validated.ReferenceNeedle]
-    except AttributeError:
-        df_TPEs_validated = df_needles_validated
-    grpd_needles = df_TPEs_validated.groupby(['PatientID', 'NeedleNr']).size().to_frame('Needle Count')
-    df_count = df_TPEs_validated.groupby(['PatientID', 'LesionNr']).size().to_frame('NeedleCount')
-    # question: how many needles (pairs) were used per lesion?
-    dfNeedles = df_TPEs_validated.groupby(['PatientID', 'LesionNr']).NeedleNr.size().to_frame('TotalNeedles')
-    dfNeedlesIndex = dfNeedles.add_suffix('_Count').reset_index()
-
-    # question: what is the frequency of the needle configuration (3 paired, 4 paired) ?
-    dfLesionsNeedlePairs = dfNeedlesIndex.groupby(['TotalNeedles_Count']).LesionNr.count()
-    dfLesionsIndex = dfLesionsNeedlePairs.add_suffix('-Paired').reset_index()
-
-    # how many patients & how many lesions ?
-    dfLesionsTotal = df_TPEs_validated.groupby(['PatientID']).LesionNr.max().to_frame('Total Lesions')
-    dfLesionsTotalIndex = dfLesionsTotal.add_suffix(' Count').reset_index()
     ## write to Excel File
     filename = outfile + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
-    df_TPEs_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
+    df_needles_validated.to_excel(writer, sheet_name='TPEs_Validated', index=False, na_rep='NaN')
     dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
 
-    df_TPEs = df_TPEs_validated[['PatientID', 'PatientName', 'LesionNr', 'NeedleNr', 'NeedleType',
-                                 'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
-                                 'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
+    df_TPEs = df_needles_validated[['PatientID', 'PatientName', 'LesionNr', 'NeedleNr', 'NeedleType',
+                                    'TimeIntervention', 'ReferenceNeedle', 'EntryLateral',
+                                    'LongitudinalError', 'LateralError', 'EuclideanError', 'AngularError']]
     df_TPEs.to_excel(writer, sheet_name='TPEs_Only', index=False, na_rep='NaN')
-    dfLesionsTotalIndex.to_excel(writer, sheet_name='LesionsTotal', index=False, na_rep='Nan')
-    dfNeedlesIndex.to_excel(writer, sheet_name='NeedlesLesion', index=False, na_rep='Nan')
-    dfLesionsIndex.to_excel(writer, sheet_name='NeedleFreq', index=False, na_rep='Nan')
-    if df_angles is not None:
-        df_angles.to_excel(writer, sheet_name='Angles', index=False, na_rep='NaN')
-    if df_areas is not None:
-        df_areas.to_excel(writer, sheet_name='Areas', index=False, na_rep='NaN')
-
     writer.save()
