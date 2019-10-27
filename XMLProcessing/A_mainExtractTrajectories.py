@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 import argparse
 from time import strftime
+from ast import literal_eval
 from collections import defaultdict
 
 import XMLProcessing.C_NeedlesInfoClasses as C_NeedlesInfoClasses
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     ap.add_argument("-i", "--rootdir", required=False, help="path to the patient folder to be processed")
     ap.add_argument("-b", "--input_batch_proc", required=False, help="input excel file for batch processing")
     ap.add_argument('-r', "--redcap_file", required=False, help="redcap file for no of antenna insertions")
-
+    flag_redcap = True
     flag_IRE = False
     flag_MWA = True
     flag_segmentation_info = False
@@ -130,7 +131,8 @@ if __name__ == '__main__':
     if args['redcap_file'] is not None:
         print('Recap File provided for number of lesions treated and no. antenna insertions')
     else:
-        sys.exit()
+        print('no redcap file provided')
+        flag_redcap = False
     if args["rootdir"] is not None:
         print("Single patient folder processing, path to folder: ", args["rootdir"])
     elif (args["input_batch_proc"]) is not None and (args["rootdir"] is None):
@@ -141,65 +143,81 @@ if __name__ == '__main__':
 
     df_redcap = pd.read_excel(args['redcap_file'])
 
-    #%% SINGLE PATIENT PROCESSING. instanstiate the patient repository class
-    rootdir = args['rootdir']
-    patientsRepo = C_NeedlesInfoClasses.PatientRepo()
-    pat_ids = []
-    pat_id = 0
-
-    # call script for extracting needle trajectories from XML
-    call_needle_extraction(rootdir)
-
-    patients = patientsRepo.getPatients()
-    df_patients_trajectories = None
-    needles_list = []
-
-    if patients:
-        df_patients_trajectories = call_extract_class_2_df(patients)
-    else:
-        print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
+    #%% SINGLE PATIENT PROCESSING. instanstiate the patient repository class\
+    if args["input_batch_proc"] is not None:
+        print('Flag to anonymize all files:', args["anonymize_all_dcm_files"])
+        # iterate through each patient and send the root dir filepath
+        df = pd.read_excel(args["input_batch_proc"])
+        df.drop_duplicates(subset=["Patient_ID"], inplace=True)
+        df.reset_index(inplace=True)
+        df['Patient_Dir_Paths'].fillna("[]", inplace=True)
+        df['Patient_Dir_Paths'] = df['Patient_Dir_Paths'].apply(literal_eval)
+        # remove the dash from the PatientName variable
+        df['Patient Name'] = df['Patient Name'].map(lambda x: x.split('-')[0] + x.split('-')[1])
+        for idx in range(len(df)):
+            patient_id = str(df["Patient_ID"].iloc[idx])
+            patient_name = str(df['Patient Name'].iloc[idx])
+            patient_dir_paths = df.Patient_Dir_Paths[idx]
+            if len(patient_dir_paths) > 0:
+                for rootdir in patient_dir_paths:
+                    rootdir = os.path.normpath(rootdir)
+                    # todo repeat the code for single processing
+    elif args["rootdir"] is not None:
+        rootdir = args['rootdir']
+        patientsRepo = C_NeedlesInfoClasses.PatientRepo()
+        pat_ids = []
+        pat_id = 0
+        # call script for extracting needle trajectories from XML
+        call_needle_extraction(rootdir)
+        patients = patientsRepo.getPatients()
+        df_patients_trajectories = None
+        needles_list = []
+        if patients:
+            df_patients_trajectories = call_extract_class_2_df(patients)
+        else:
+            print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:',
               rootdir)
+        Patient_ID = df_patients_trajectories.iloc[0].PatientID
+        try:
+            Patient_ID_xml = Patient_ID.split('-')[1]
+        except Exception:
+            Patient_ID_xml = Patient_ID
+        if flag_redcap:
+            df_patient_redcap = df_redcap[df_redcap.Patient_ID == Patient_ID_xml]
+            for idx, row in df_patient_redcap.iterrows():
+                if not np.isnan(row['Number of ablated lesions']):
+                    no_lesions_redcap = row['Number of ablated lesions']
+        else:
+            no_lesions_redcap = -1
+        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
+                                                                  flag_IRE,
+                                                                  flag_MWA,
+                                                                  no_lesions_redcap)
 
-    Patient_ID = df_patients_trajectories.iloc[0].PatientID
-    try:
-        Patient_ID_xml = Patient_ID.split('-')[1]
-    except Exception:
-        Patient_ID_xml = Patient_ID
-    df_patient_redcap = df_redcap[df_redcap.Patient_ID == Patient_ID_xml]
-    for idx, row in df_patient_redcap.iterrows():
-        if not np.isnan(row['Number of ablated lesions']):
-            no_lesions_redcap = row['Number of ablated lesions']
-    # try:
-    df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
-                                                              flag_IRE,
-                                                              flag_MWA,
-                                                              no_lesions_redcap)
-    print("DataFrame cleaning successful. Lesion and Needle Nr updated...")
-
-    dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-
-    if flag_MWA is True:
         dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-        print('Success! Extracting and Writing Information to the Excel File.....')
 
-    if flag_IRE is True:
-        # %% compute area between IRE Needles
-        df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
-        df_areas = df_area_between_needles[
-            ['PatientID', 'LesionNr', 'NeedleCount', 'Planned Area', 'Validation Area']]
-        # %% compute angles between IRE Needles
-        df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
-        dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
-        # write to Excel File...
+        if flag_MWA is True:
+            dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
+            print('Success! Extracting and Writing Information to the Excel File.....')
 
-        dataframe_metrics.write_toExcelFile(rootdir=rootdir,
-                                            outfile=outfilename,
-                                            df_needles_validated=df_TPEs_validated,
-                                            dfPatientsTrajectories=df_patients_trajectories,
-                                            df_angles=df_angles,
-                                            df_areas=df_areas)
+        if flag_IRE is True:
+            # %% compute area between IRE Needles
+            df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
+            df_areas = df_area_between_needles[
+                ['PatientID', 'LesionNr', 'NeedleCount', 'Planned Area', 'Validation Area']]
+            # %% compute angles between IRE Needles
+            df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
+            dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
+            # write to Excel File...
 
-        print('Success! Extracting and Writing Information to the Excel File.....')
+            dataframe_metrics.write_toExcelFile(rootdir=rootdir,
+                                                outfile=outfilename,
+                                                df_needles_validated=df_TPEs_validated,
+                                                dfPatientsTrajectories=df_patients_trajectories,
+                                                df_angles=df_angles,
+                                                df_areas=df_areas)
+
+            print('Success! Extracting and Writing Information to the Excel File.....')
 
 
 
