@@ -11,8 +11,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import XMLProcessing.D_extractIREAngles as D_extractIREAngles
-import XMLProcessing.extractAreaNeedles as extractAreaNeedles
+import XMLProcessing.ExtractIREAngles as D_extractIREAngles
+import XMLProcessing.ExtractAreaNeedles as extractAreaNeedles
 
 pd.options.display.float_format = '{:.2f}'.format
 

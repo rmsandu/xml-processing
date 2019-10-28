@@ -14,9 +14,9 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-import XMLProcessing.B_parseNeedleTrajectories as parseNeedleTrajectories
-import XMLProcessing.C_NeedlesInfoClasses as C_NeedlesInfoClasses
-import XMLProcessing.dataframe_metrics as dataframe_metrics
+import XMLProcessing.ParseNeedleTrajectories as parseNeedleTrajectories
+import XMLProcessing.NeedlesInfoClasses as C_NeedlesInfoClasses
+import XMLProcessing.ExtractTPEtoExcel as dataframe_metrics
 
 
 # %%

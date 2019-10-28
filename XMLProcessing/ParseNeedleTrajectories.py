@@ -13,8 +13,8 @@ from collections import defaultdict
 
 
 import xml.etree.ElementTree as ET
-from XMLProcessing.extractTPEsXml import extractTPES
-from XMLProcessing.elementExistsXml import elementExists
+from XMLProcessing.ExtractTPEsXml import extractTPES
+from XMLProcessing.ElementExistsXml import elementExists
 from XMLProcessing.splitAllPaths import splitall
 
 
