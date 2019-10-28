@@ -29,9 +29,9 @@ df = pd.read_excel(input_csv)
 df["Patient Name"] = df['Lesion_ID']
 df["Patient Name"] = df["Patient Name"].map(lambda x: x.partition("-L")[0])
 df["Date_of_Birth"] = df["Date_of_Birth"].map(lambda x: str(x) + "0101")
-df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.split(":")[2])
-df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.replace("-", ""))
-df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.replace(" ", ""))
+# df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.split(":")[2])
+# df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.replace("-", ""))
+# df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.replace(" ", ""))
 
 # iterate for each patient id from  the excel and look for substring in the list of dir_paths
 dir_paths = [os.path.join(input_dir, x) for x in os.listdir(input_dir)]
