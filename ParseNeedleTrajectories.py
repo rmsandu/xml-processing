@@ -4,18 +4,17 @@ Created on Mon Feb  5 15:04:29 2018
 
 @author: Raluca Sandu
 """
-import os
-import re
 import collections
-import numpy as np
-import untangle as ut
+import re
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 
+import numpy as np
+import untangle as ut
 
-import xml.etree.ElementTree as ET
-from XMLProcessing.ExtractTPEsXml import extractTPES
-from XMLProcessing.ElementExistsXml import elementExists
-from XMLProcessing.splitAllPaths import splitall
+from ElementExistsXml import elementExists
+from ExtractTPEsXml import extractTPES
+from utils.splitAllPaths import splitall
 
 
 #%%

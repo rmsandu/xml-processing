@@ -11,12 +11,11 @@ import sys
 from ast import literal_eval
 from collections import defaultdict
 
+import ExtractTPEtoExcel as dataframe_metrics
+import NeedlesInfoClasses as C_NeedlesInfoClasses
+import ParseNeedleTrajectories as parseNeedleTrajectories
 import numpy as np
 import pandas as pd
-
-import XMLProcessing.ParseNeedleTrajectories as parseNeedleTrajectories
-import XMLProcessing.NeedlesInfoClasses as C_NeedlesInfoClasses
-import XMLProcessing.ExtractTPEtoExcel as dataframe_metrics
 
 
 # %%

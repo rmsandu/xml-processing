@@ -7,70 +7,9 @@ for IRE Angles
 """
 import os
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
-import XMLProcessing.ExtractAreaNeedles as extractAreaNeedles
-import XMLProcessing.ExtractIREAngles as D_extractIREAngles
-
 pd.options.display.float_format = '{:.2f}'.format
-
-
-def compute_area(df):
-    """ Compute Area cm^2 for xyz coordinates.
-    :param df: Dataframe with Needle Trajectories Coordinates (Target Points - xyz)
-    :return: Dataframe with Area [cm^2] between IRE needles
-    """
-    Area_between_needles = []
-    patient_unique = df['PatientID'].unique()
-    for PatientIdx, patient in enumerate(patient_unique):
-        patient_data = df[df['PatientID'] == patient]
-        extractAreaNeedles.compute_areas_needles(patient_data, patient, Area_between_needles)
-    df_area_between_needles = pd.DataFrame(Area_between_needles)
-
-    return df_area_between_needles
-
-
-def compute_angles(df):
-    """ Compute Angles Degrees for Needles
-
-    :param df: Dataframe with Needle Trajectories Coordinates (Target Points - EntryPoints vectors in 3D)
-    :return: df: Dataframe of Angles (degrees) computed for each needle pair (including reference needle)
-    """
-    Angles = []
-    patient_unique = df['PatientID'].unique()
-    for PatientIdx, patient in enumerate(patient_unique):
-        patient_data = df[df['PatientID'] == patient]
-        D_extractIREAngles.ComputeAnglesTrajectories.FromTrajectoriesToNeedles(patient_data, patient, Angles)
-    df_angles = pd.DataFrame(Angles)
-
-    # convert to dataframe & make columns numerical so Excel operations are allowed
-    df_angles['A_dash'] = '-'
-    df_angles['Electrode Pair'] = df_angles['NeedleA'].astype(str) + df_angles['A_dash'] + df_angles['NeedleB'].astype(
-        str)
-    df_angles = df_angles[['PatientID', 'LesionNr', 'Electrode Pair', 'Planned Angle', 'Validation Angle']]
-    df_angles.sort_values(by=['PatientID', 'LesionNr'], inplace=True)
-    df_angles.apply(pd.to_numeric, errors='ignore', downcast='float')
-    # dfAngles_no_nans = dfAngles.dropna(subset=['Validation Angle'], inplace=True)
-
-    return df_angles
-
-
-def plot_boxplot_angles(df_angles, rootdir):
-    """
-    :param dfAngles: DataFrame Angles (plan & validation)
-    :return: - saves boxplot in png format
-    """
-
-    fig, axes = plt.subplots(figsize=(18, 20))
-    df_angles.boxplot(column=['Planned Angle', 'Validation Angle'], patch_artist=False, fontsize=20)
-    plt.ylabel('Angle [$^\circ$]', fontsize=20)
-    # plt.show()
-    savepath_png = os.path.join(rootdir, 'IRE_Angles.png')
-    savepath_svg = os.path.join(rootdir, 'IRE_Angles.svg')
-    plt.savefig(savepath_png, pad_inches=0)
-    plt.savefig(savepath_svg, pad_inches=0)
-
 
 def customize_dataframe(dfPatientsTrajectories, no_lesions_redcap, list_not_validated):
     """
