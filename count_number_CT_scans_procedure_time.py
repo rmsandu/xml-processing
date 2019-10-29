@@ -2,35 +2,36 @@
 """
 @author: Raluca Sandu
 """
-import sys
 import argparse
 import os
-import pydicom
-import pandas as pd
+import sys
+from ast import literal_eval
 from datetime import datetime
 
+import pandas as pd
+import pydicom
 
-def create_dict_paths_series_dcm(rootdir, ablation_date_redcap):
+
+def create_dict_paths_series_dcm(rootdir, ablation_date_redcap, patient_id):
     list_all_ct_series = []
     acquisition_time_list = []
     number_ct_scans = 0
     for subdir, dirs, files in os.walk(rootdir):
-
         for file in sorted(files):
             try:
                 dcm_file = os.path.join(subdir, file)
                 dataset_source_ct = pydicom.read_file(dcm_file)
-                ablation_date_ct = dataset_source_ct.AcquisitionDate
-                if ablation_date_ct != ablation_date_redcap:
-                    continue
-                ct_time_str = dataset_source_ct.AcquisitionDateTime
-                ct_date_time = datetime.strptime(ct_time_str, "%Y%m%d%H%M%S")
-                acquisition_time_list.append(ct_date_time)
-                patient_id = dcm_file.PatientID
-                # extract just the first time from a folder
             except Exception:
-                # not dicom file so continue until you find one
                 continue
+            ablation_date_ct = dataset_source_ct.AcquisitionDate
+            if str(ablation_date_ct) != str(ablation_date_redcap):
+                continue
+            ct_time = dataset_source_ct.AcquisitionDateTime
+            ct_time_str = ct_time.split('.')[0]
+            ct_date_time = datetime.strptime(ct_time_str, "%Y%m%d%H%M%S")
+            acquisition_time_list.append(ct_date_time)
+            # extract just the first time from a folder
+
             source_series_instance_uid = dataset_source_ct.SeriesInstanceUID
             try:
                 source_study_instance_uid = dataset_source_ct.StudyInstanceUID
@@ -53,26 +54,27 @@ def create_dict_paths_series_dcm(rootdir, ablation_date_redcap):
                 list_all_ct_series.append(dict_series_folder)
 
     df = pd.DataFrame(data=acquisition_time_list, columns=['Time'], index=range(0, len(acquisition_time_list)))
+    print(len(df))
+    print((df.Time.max() - df.Time.min()))
     time_duration_procedure = (df.Time.max() - df.Time.min()).total_seconds() / 60
-    df_patient = pd.DataFrame(list_all_ct_series)
-    df_patient['TimeDurationMin'] = time_duration_procedure
+    dict_pat = {'PatientID:': patient_id,
+                'Number CT Scans': number_ct_scans,
+                'TimeDurationMin': time_duration_procedure
+                }
+    list_dict_pat = []
+    list_dict_pat.append(dict_pat)
+    df_patient = pd.DataFrame(list_dict_pat)
 
     return df_patient
 
 
-if '__name__' == '__main__':
+if __name__ == '__main__':
+
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--rootdir", required=False, help="path to the patient folder to be processed")
     ap.add_argument("-b", "--input_batch_proc", required=False,
                     help="input excel file for batch processing")  # Batch_processing_MAVERRIC.xlsx
-    ap.add_argument('-r', "--redcap_file", required=False,
-                    help="redcap file for no of antenna insertions")  # redcap_file_all_2019-10-14.xlsx
     args = vars(ap.parse_args())
-    if args['redcap_file'] is not None:
-        print('RedCap File provided for number of lesions treated and no. antenna insertions')
-    else:
-        print('no redcap file provided')
-        flag_redcap = False
     if args["rootdir"] is not None:
         print("Single patient folder processing, path to folder: ", args["rootdir"])
     elif (args["input_batch_proc"]) is not None and (args["rootdir"] is None):
@@ -80,8 +82,21 @@ if '__name__' == '__main__':
     else:
         print("no input values provided either for single patient processing or batch processing. System Exiting")
         sys.exit()
+    list_not_validated = []
+    # iterate through each patient and send the root dir filepath
+    df = pd.read_excel(args["input_batch_proc"])
+    df.drop_duplicates(subset=["Patient_ID"], inplace=True)
+    df.reset_index(inplace=True)
+    df['Patient_Dir_Paths'].fillna("[]", inplace=True)
+    df['Patient_Dir_Paths'] = df['Patient_Dir_Paths'].apply(literal_eval)
+    frames = []
+    for row in df.itertuples():
+        rootdir = row.Patient_Dir_Paths[0]
+        ablation_date_redcap = row.Ablation_IR_Date
+        patient_id = row.Patient_ID
+        frames.append(create_dict_paths_series_dcm(rootdir, ablation_date_redcap, patient_id))
 
-    df_redcap = pd.read_excel(args['redcap_file'])
-    # parse each patient folder # PATIENT LEVEL
-    # count the number of scans  and add all the scans and their times to a list
-    # calculate the time between the first and last ablation scan
+    print(len(frames))
+    df_final = pd.concat(frames, ignore_index=True)
+
+
