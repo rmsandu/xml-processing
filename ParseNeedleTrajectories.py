@@ -4,18 +4,17 @@ Created on Mon Feb  5 15:04:29 2018
 
 @author: Raluca Sandu
 """
-import os
-import re
 import collections
-import numpy as np
-import untangle as ut
+import re
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 
+import numpy as np
+import untangle as ut
 
-import xml.etree.ElementTree as ET
-from XMLProcessing.extractTPEsXml import extractTPES
-from XMLProcessing.elementExistsXml import elementExists
-from XMLProcessing.splitAllPaths import splitall
+from ElementExistsXml import elementExists
+from ExtractTPEsXml import extractTPES
+from utils.splitAllPaths import splitall
 
 
 #%%
@@ -90,79 +89,6 @@ def I_parseRecordingXML(filename):
     return result
 
 
-def parse_segmentation(singleTrajectory, needle, needle_type, ct_series, xml_filepath):
-    """ Parse segmentation information.
-    :param singleTrajectory: XML Tree Element.
-    :param needle: Class Object Needle
-    :param needle_type: MWA, IRE, RF, etc.
-    :param ct_series: CT_Series number. Not unique.
-    :param xml_filepath:  absolute filepath of the XML Log file currently parsed.
-    :return: segmentation information
-    """
-    segmentation_type = singleTrajectory.Segmentation["StructureType"]
-    if singleTrajectory.Segmentation["TypeOfSegmentation"].lower() in {"sphere"}:
-        # add the radius for search purposes when the series uid is missing.
-        # if a sphere is used for annotation, no DICOM mask will be generated in the background
-        series_UID = singleTrajectory.Segmentation["SphereRadius"]
-        sphere_radius = singleTrajectory.Segmentation["SphereRadius"]
-        segmentation_filepath = ''
-    else:
-        series_UID = singleTrajectory.Segmentation.SeriesUID.cdata
-        sphere_radius = ''
-        all_paths = splitall(xml_filepath)
-        idx_study = [i for i, s in enumerate(all_paths) if "Study" in s]
-        idx_cas_recordings = [i for i, s in enumerate(all_paths) if "CAS-One Recordings" in s]
-        segmentation_datetime = all_paths[idx_cas_recordings[0] + 1]
-        segmentation_filepath = os.path.join(*all_paths[0:len(all_paths) - 1],
-                                             singleTrajectory.Segmentation.Path.cdata[1:])
-        idx_pat = [i for i, s in enumerate(all_paths) if "Pat" in s]
-        # extract the filepath of the source CT series
-        all_paths_segmentation = splitall(singleTrajectory.Segmentation.Path.cdata[1:])
-        idx_series = [i for i, s in enumerate(all_paths_segmentation) if "Series" in s]
-        str_to_split = all_paths_segmentation[idx_series[0]]
-        series_no = [int(s) for s in str_to_split.split("_") if s.isdigit()]
-        series_no_source = "Series_" + str(series_no[0])
-        # TODO: check source segmentation path
-        # source_filepath = os.path.join(all_paths[idx_pat[1]-1],
-        #                                 all_paths[idx_pat[1]],
-        #                                 all_paths[idx_pat[1] + 1],
-        #                                 series_no_source)
-        source_filepath = os.path.join(*all_paths[0:idx_study[0] + 1],
-                                       series_no_source)
-    # check if folder exists in the current path adress extracted from the XML.
-    # if false, the segmentations are stored into another folder.
-    # check if folder is empty. if true don't add the segmentation to the needles.
-
-    if os.path.exists(segmentation_filepath) and len(os.listdir(segmentation_filepath)) > 0:
-        #  check if the series UID has already been added.
-        # TODO: series UID is not unique, problem might arise there
-        segmentation = needle.findSegmentation(series_UID, segmentation_type)
-        if segmentation is None:
-            # append to the list of segmentations based on time of the intervention
-            segmentation = needle.newSegmentation(segmentation_datetime,
-                                                  segmentation_type,
-                                                  source_filepath,
-                                                  segmentation_filepath,
-                                                  needle_type,
-                                                  ct_series,
-                                                  series_UID,
-                                                  sphere_radius)
-            # TODO: add ablator information - actual info in patients records and REDCAP
-            # if elementExists(singleTrajectory, 'Ablator'):
-            #     needle_params = segmentation.setNeedleSpecifications()
-            #     needle_params.setNeedleSpecifications(singleTrajectory.Ablator["id"],
-            #                                           singleTrajectory.Ablator["ablationSystem"],
-            #                                           singleTrajectory.Ablator["ablationSystemVersion"],
-            #                                           singleTrajectory.Ablator["ablatorType"],
-            #                                           singleTrajectory.Ablator.Ablation["ablationShapeIndex"])
-        else:
-            pass  # do nothing
-            # print("segmentation series already exists")
-    else:
-        pass
-        print("Segmentation Folder Empty")
-
-
 def IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_filepath, time_intervention,
                     cas_version):
     """ Parse Individual Needle Trajectories per Lesion.
@@ -220,11 +146,6 @@ def IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_f
 
             # set TPE errors
             tps.setTPEErrors(entry_lateral, target_lateral, target_angular, target_longitudinal, target_euclidean)
-
-        # add the segmentation path if it exists
-        if elementExists(singleTrajectory, 'Segmentation'):
-            pass #SKIP SEGMENTATION IDENTICATION
-            parse_segmentation(singleTrajectory, needle, needle_type, ct_series, xml_filepath)
 
 
 def III_parseTrajectory(trajectories, patient, ct_series, xml_filepath, time_intervention, cas_version):
@@ -310,7 +231,6 @@ def III_parseTrajectory(trajectories, patient, ct_series, xml_filepath, time_int
                             ct_series, xml_filepath, time_intervention, cas_version)
 
 
-
 def II_parseTrajectories(xmlobj):
     """ Parse upper-level trajectories structure.
     :param:  xmlobj tree structured parsed by library such as untangle, XMLTree etc.
@@ -350,7 +270,6 @@ def II_parseTrajectories(xmlobj):
 
     result = tuple_results(trajectories, series, time_intervention, cas_version)
     return result
-
 
 
 def II_extractRegistration(xmlobj, patient, xmlfilename):

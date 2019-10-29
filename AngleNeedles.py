@@ -5,8 +5,10 @@ calculate angle between vectors
 @author: Raluca Sandu
 """
 
-import numpy as np
 from math import degrees
+
+import numpy as np
+
 
 def unit_vector(vector):
     """ Returns the unit vector of the vector.  """
