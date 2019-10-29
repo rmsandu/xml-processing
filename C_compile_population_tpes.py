@@ -32,21 +32,26 @@ if __name__ == '__main__':
                     excel_input_file_per_lesion = os.path.join(subdir, file)
                     df_single_lesion = pd.read_excel(excel_input_file_per_lesion)
                     df_single_lesion.rename(columns={'LesionNr': 'Lesion_ID', 'PatientID': 'Patient_ID'}, inplace=True)
-                    # MAV - B01 - L1
                     try:
                         patient_id = df_single_lesion.loc[0]['Patient_ID']
-                        if patient_id == '01':
-                            df_single_lesion['Patient_ID'] = 'M01'
-                        if patient_id == 'MAV-G10':
-                            df_single_lesion['Patient_ID'] = 'G10'
-                        if patient_id == 'MAV-G11':
-                            df_single_lesion['Patient_ID'] = 'G11'
-                        if patient_id == 'MAV-G17':
-                            df_single_lesion['Patient_ID'] = 'G17'
                         if len(patient_id) > 3:
                             df_single_lesion['Patient_ID'] = df_single_lesion['Patient_ID'].apply(
                                 lambda x: x.split('-')[1])
                             patient_id = df_single_lesion.loc[0]['Patient_ID']
+                        if patient_id == '01':
+                            print('BAD Patient M01')
+                            df_single_lesion['Patient_ID'] = 'M01'
+                            df_single_lesion['Patient_ID'] = df_single_lesion['Patient_ID'].apply(
+                                lambda x: x.split('-')[1])
+                        # if patient_id == 'MAV-G10':
+                        #     print('BAD Patient G10')
+                        #     df_single_lesion['Patient_ID'] = 'G10'
+                        # if patient_id == 'MAV-G11':
+                        #     print('BAD Patient G11')
+                        #     df_single_lesion['Patient_ID'] = 'G11'
+                        # if patient_id == 'MAV-G17':
+                        #     print('BAD Patient G17')
+                        #     df_single_lesion['Patient_ID'] = 'G17'
                     except Exception as e:
                         print(repr(e))
                         print("Path to bad excel file:", excel_input_file_per_lesion)
@@ -54,23 +59,23 @@ if __name__ == '__main__':
                     try:
                         df_single_lesion['Lesion_ID'] = df_single_lesion['Lesion_ID'].apply(
                                 lambda x: 'MAV-' + patient_id + '-L' + str(x))
-                        print(df_single_lesion['Lesion_ID'])
                     except Exception as e:
                         print(repr(e))
                         print("Path to bad excel file:", excel_input_file_per_lesion)
                         continue
                     frames.append(df_single_lesion)
-                # concatenate on patient_id and lesion_id
-                # rename the columns
-                # concatenate the rest of the pandas dataframe based on the lesion id.
-                # first edit the lesion id.
 
-# result = pd.concat(frames, axis=1, keys=['Patient ID', 'Lesion id', 'ablation_date'], ignore_index=True)
 #%%
 print('no of lesions found:', len(frames))
 result = pd.concat(frames, ignore_index=False)
 result.drop_duplicates(subset=['Lesion_ID'], inplace=True)
+result.loc[result['Patient_ID'] == 'MAV-G10', 'Patient_ID'] = 'G10'
+result.loc[result['Patient_ID'] == 'MAV-G11', 'Patient_ID'] = 'G11'
+result.loc[result['Patient_ID'] == 'MAV-G17', 'Patient_ID'] = 'G17'
+
 print('No of Needles:', len(result))
+
+df_patient = result[result['Patient_ID'] == 'MAV-G10']
 filepath_excel = "TPEs_ECIO.xlsx"
 writer = pd.ExcelWriter(filepath_excel)
 result.to_excel(writer, sheet_name='TPEs', index=False, float_format='%.4f')

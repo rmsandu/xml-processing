@@ -6,13 +6,12 @@ for IRE Angles
 @author: Raluca Sandu
 """
 import os
-from datetime import datetime
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import XMLProcessing.ExtractIREAngles as D_extractIREAngles
 import XMLProcessing.ExtractAreaNeedles as extractAreaNeedles
+import XMLProcessing.ExtractIREAngles as D_extractIREAngles
 
 pd.options.display.float_format = '{:.2f}'.format
 
@@ -51,7 +50,7 @@ def compute_angles(df):
         str)
     df_angles = df_angles[['PatientID', 'LesionNr', 'Electrode Pair', 'Planned Angle', 'Validation Angle']]
     df_angles.sort_values(by=['PatientID', 'LesionNr'], inplace=True)
-    df_angles.apply(pd.to_numeric, errors='ignore', downcast='float').info()
+    df_angles.apply(pd.to_numeric, errors='ignore', downcast='float')
     # dfAngles_no_nans = dfAngles.dropna(subset=['Validation Angle'], inplace=True)
 
     return df_angles
@@ -103,35 +102,47 @@ def customize_dataframe(dfPatientsTrajectories, no_lesions_redcap, list_not_vali
     dfPatientsTrajectories.sort_values(by=['PatientID', 'LesionNr', 'NeedleNr'], inplace=True)
     # KEEP ONLY THE VALIDATED NEEDLES
     dfTPEs_validated = dfPatientsTrajectories.dropna(subset=['EuclideanError'], how='all')
-    # dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
-    # dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], inplace=True)
+
+    dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
+    dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], keep='last', inplace=True)
 
     if dfTPEs_validated.empty:
         print("None of the Needles were validated at this patient directory:", dfPatientsTrajectories.iloc[0].PatientID)
-        list_not_validated.append('None of the Needles were validated for this patient:' + dfPatientsTrajectories.iloc[0].PatientID)
+        list_not_validated.append(
+            'None of the Needles were validated for this patient:' + dfPatientsTrajectories.iloc[0].PatientID)
         return
     df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'MWA']
     # execute only if redcap file has been provided
     if no_lesions_redcap != -1:
         if len(df_needles_validated) > no_lesions_redcap:
-            df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
-                lambda x: x.split(' ')[0])
-            df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
-                lambda x: x.replace('_', ' '))
-            df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
-                lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
-            most_recent_date = df_needles_validated['TimeDateIntervention'].max()
-            df_needles_validated = df_needles_validated[
-                df_needles_validated['TimeDateIntervention'] == most_recent_date]
+            if 'G' not in df_needles_validated.iloc[0].PatientID:
+                # keep the Groningen Patients because they were validated in 2019
+                dfPatientsTrajectories[['CAS_Version']] = dfPatientsTrajectories[['CAS_Version']].apply(pd.to_numeric,
+                                                                                                          downcast='float')
+                df_needles_validated = df_needles_validated[df_needles_validated['CAS_Version'] != 3]
+            else:
+                print('merge codul asta:', df_needles_validated.iloc[0].PatientID)
+            # df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
+            #     lambda x: x.split(' ')[0])
+            # df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
+            #     lambda x: x.replace('_', ' '))
+            # df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
+            #     lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
+            # most_recent_date = df_needles_validated['TimeDateIntervention'].max()
+            # df_needles_validated = df_needles_validated[
+            #     df_needles_validated['TimeDateIntervention'] == most_recent_date]
+            print('More needles than defined found!!!')
             list_not_validated.append(
                 str(no_lesions_redcap) + ' lesions found in RedCap. ' + str(len(df_needles_validated)) +
                 ' needles found validated for this patient:' + dfPatientsTrajectories.iloc[0].PatientID)
         elif len(df_needles_validated) < no_lesions_redcap:
+            print('Needles not validated!')
             print(str(no_lesions_redcap - len(df_needles_validated)),
                   ' needles were not validated for this patient:',
                   dfPatientsTrajectories.iloc[0].PatientID)
-            list_not_validated.append(str(no_lesions_redcap) + ' lesions found in RedCap. ' + str(len(df_needles_validated)) +
-                  ' needles found validated for this patient:' + dfPatientsTrajectories.iloc[0].PatientID)
+            list_not_validated.append(
+                str(no_lesions_redcap) + ' lesions found in RedCap. ' + str(len(df_needles_validated)) +
+                ' needles found validated for this patient:' + dfPatientsTrajectories.iloc[0].PatientID)
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()
     for PatientIdx, patient in enumerate(patient_unique):
