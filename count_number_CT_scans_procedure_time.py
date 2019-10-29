@@ -5,15 +5,17 @@
 import sys
 import argparse
 import os
-import numpy
 import pydicom
 import pandas as pd
+from datetime import datetime
 
 
 def create_dict_paths_series_dcm(rootdir, ablation_date_redcap):
     list_all_ct_series = []
+    acquisition_time_list = []
+    number_ct_scans = 0
     for subdir, dirs, files in os.walk(rootdir):
-        acquisition_time_list = []
+
         for file in sorted(files):
             try:
                 dcm_file = os.path.join(subdir, file)
@@ -21,7 +23,9 @@ def create_dict_paths_series_dcm(rootdir, ablation_date_redcap):
                 ablation_date_ct = dataset_source_ct.AcquisitionDate
                 if ablation_date_ct != ablation_date_redcap:
                     continue
-                acquisition_time_list.append(dataset_source_ct.AcquisitionTime)
+                ct_time_str = dataset_source_ct.AcquisitionDateTime
+                ct_date_time = datetime.strptime(ct_time_str, "%Y%m%d%H%M%S")
+                acquisition_time_list.append(ct_date_time)
                 patient_id = dcm_file.PatientID
                 # extract just the first time from a folder
             except Exception:
@@ -38,16 +42,22 @@ def create_dict_paths_series_dcm(rootdir, ablation_date_redcap):
             result = next((item for item in list_all_ct_series if
                            item["SeriesInstanceNumberUID"] == source_series_instance_uid), None)
             if result is None:
+                number_ct_scans +=1
                 dict_series_folder = {'PatientID:': patient_id,
                                       "SeriesNumber": source_series_number,
                                       "SeriesInstanceNumberUID": source_series_instance_uid,
                                       "SOPClassUID": source_SOP_class_uid,
                                       "StudyInstanceUID": source_study_instance_uid,
-                                      "AcquisitionTimeStart": acquisition_time_start,
-                                      "AcquisitionTimeEnd": acquisition_time_end,
+                                      'Number CT Scans': number_ct_scans,
                                       }
                 list_all_ct_series.append(dict_series_folder)
-    return list_all_ct_series
+
+    df = pd.DataFrame(data=acquisition_time_list, columns=['Time'], index=range(0, len(acquisition_time_list)))
+    time_duration_procedure = (df.Time.max() - df.Time.min()).total_seconds() / 60
+    df_patient = pd.DataFrame(list_all_ct_series)
+    df_patient['TimeDurationMin'] = time_duration_procedure
+
+    return df_patient
 
 
 if '__name__' == '__main__':
