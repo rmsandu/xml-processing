@@ -23,15 +23,11 @@ def call_needle_extraction(rootdir):
     for subdir, dirs, files in os.walk(rootdir):
         # sorted: files by date of creation
         for file in sorted(files):
-
             fileName, fileExtension = os.path.splitext(file)
-
             # the tumour segmentation path is in the "Plan.xml"
             # the ablation segmentation path is in the "Validation.xml"
-
             if fileExtension.lower().endswith('.xml') and (
                     'validation' in fileName.lower() or 'plan' in fileName.lower()):
-
                 xmlFilePathName = os.path.join(subdir, file)
                 xmlfilename = os.path.normpath(xmlFilePathName)
                 xmlobj = parseNeedleTrajectories.I_parseRecordingXML(xmlfilename)
@@ -163,7 +159,6 @@ if __name__ == '__main__':
                     else:
                         print('No CAS Folder Recordings found. Check if the files are there and in the correct folder structure:', rootdir)
                         continue
-
                     Patient_ID = df_patients_trajectories.iloc[0].PatientID
                     try:
                         Patient_ID_xml = Patient_ID.split('-')[1]
@@ -179,12 +174,12 @@ if __name__ == '__main__':
                     df_TPEs_validated = dataframe_metrics.customize_dataframe(
                                             df_patients_trajectories, no_lesions_redcap, list_not_validated)
                     dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-                    # write the list of non validated needles to Excel
-                    list_not_validated_df = pd.DataFrame(list_not_validated)
-                    filepath = 'list_patients_not_validated.xlsx'
-                    writer = pd.ExcelWriter(filepath)
-                    list_not_validated_df.to_excel(writer, index=False)
-                    writer.save()
+        # write the list of non validated needles to Excel
+        list_not_validated_df = pd.DataFrame(list_not_validated)
+        filepath = 'list_patients_not_validated.xlsx'
+        writer = pd.ExcelWriter(filepath)
+        list_not_validated_df.to_excel(writer, index=False)
+        writer.save()
 
     # SINGLE PATIENT PROCESSING. instanstiate the patient repository class\
     elif args["rootdir"] is not None:
