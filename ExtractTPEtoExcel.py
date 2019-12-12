@@ -11,6 +11,7 @@ import pandas as pd
 
 pd.options.display.float_format = '{:.2f}'.format
 
+
 def customize_dataframe(dfPatientsTrajectories, no_lesions_redcap, list_not_validated):
     """
     Clean the Dataframe. Keep only validated (TPEs present) trajectories. Correct the lesion and needle count.

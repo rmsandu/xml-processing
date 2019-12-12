@@ -235,6 +235,7 @@ class Needle:
         dict_needles['PlannedEntryPoint'].append(self.planned.entrypoint)
         dict_needles['PlannedTargetPoint'].append(self.planned.targetpoint)
         dict_needles['PlannedNeedleLength'].append(self.planned.length_needle)
+        dict_needles['LengthToTarget'].append(self.planned.length_to_target)
         dict_needles['ValidationEntryPoint'].append(self.validation.entrypoint)
         dict_needles['ValidationTargetPoint'].append(self.validation.targetpoint)
         dict_needles['ReferenceNeedle'].append(self.isreference)
@@ -297,6 +298,7 @@ class Trajectory:
         self.entrypoint = None
         self.targetpoint = None
         self.length_needle = None
+        self.length_to_target = None
 
     def setTrajectory(self, entrypoint, targetpoint):
         self.entrypoint = entrypoint
@@ -307,3 +309,6 @@ class Trajectory:
             self.length_needle = np.linalg.norm(self.targetpoint - self.entrypoint)
         else:
             self.length_needle = None
+
+    def setLengthToTarget(self, length):
+        self.length_to_target = length

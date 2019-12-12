@@ -122,6 +122,11 @@ def IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_f
         planned = needle.setPlannedTrajectory()
         planned.setTrajectory(ep_planning, tp_planning)
         planned.setLengthNeedle()
+        try:
+            LengthToTarget = singleTrajectory.LengthToTarget.cdata[0:5]
+        except Exception:
+            LengthToTarget = None
+        planned.setLengthToTarget(LengthToTarget)
         needle.setTimeIntervention(time_intervention)
         needle.setCASversion(cas_version)
         # add the TPEs if they exist in the Measurements field - ie. the needle has been validated
