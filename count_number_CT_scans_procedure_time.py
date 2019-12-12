@@ -17,46 +17,56 @@ def create_dict_paths_series_dcm(rootdir, ablation_date_redcap, patient_id):
     acquisition_time_list = []
     number_ct_scans = 0
     for subdir, dirs, files in os.walk(rootdir):
-        for file in sorted(files):
-            try:
-                dcm_file = os.path.join(subdir, file)
-                dataset_source_ct = pydicom.read_file(dcm_file)
-            except Exception:
-                continue
-            ablation_date_ct = dataset_source_ct.AcquisitionDate
-            if str(ablation_date_ct) != str(ablation_date_redcap):
-                continue
-            ct_time = dataset_source_ct.AcquisitionDateTime
-            ct_time_str = ct_time.split('.')[0]
-            ct_date_time = datetime.strptime(ct_time_str, "%Y%m%d%H%M%S")
-            acquisition_time_list.append(ct_date_time)
-            # extract just the first time from a folder
-
-            source_series_instance_uid = dataset_source_ct.SeriesInstanceUID
-            try:
-                source_study_instance_uid = dataset_source_ct.StudyInstanceUID
-            except Exception:
-                source_study_instance_uid = None
-            source_series_number = dataset_source_ct.SeriesNumber
-            source_SOP_class_uid = dataset_source_ct.SOPClassUID
-            # if the ct series is not found in the dictionary, add it
-            result = next((item for item in list_all_ct_series if
-                           item["SeriesInstanceNumberUID"] == source_series_instance_uid), None)
-            if result is None:
-                number_ct_scans +=1
-                dict_series_folder = {'PatientID:': patient_id,
-                                      "SeriesNumber": source_series_number,
-                                      "SeriesInstanceNumberUID": source_series_instance_uid,
-                                      "SOPClassUID": source_SOP_class_uid,
-                                      "StudyInstanceUID": source_study_instance_uid,
-                                      'Number CT Scans': number_ct_scans,
-                                      }
-                list_all_ct_series.append(dict_series_folder)
+        if not(('Segmentations' in subdir) and ('SeriesNo_' in subdir)):
+            for file in sorted(files):
+                try:
+                    dcm_file = os.path.join(subdir, file)
+                    dataset_source_ct = pydicom.read_file(dcm_file)
+                except Exception:
+                    continue
+                try:
+                    ablation_date_ct = dataset_source_ct.AcquisitionDate
+                    if str(ablation_date_ct) != str(ablation_date_redcap):
+                        continue
+                    try:
+                        ct_time = dataset_source_ct.AcquisitionDateTime
+                    except AttributeError:
+                        ct_time_t = dataset_source_ct.AcquisitionTime
+                        ct_time = ablation_date_ct + ct_time_t
+                    ct_time_str = ct_time.split('.')[0]
+                    ct_date_time = datetime.strptime(ct_time_str, "%Y%m%d%H%M%S")
+                    acquisition_time_list.append(ct_date_time)
+                except Exception:
+                    continue
+                source_series_instance_uid = dataset_source_ct.SeriesInstanceUID
+                try:
+                    source_study_instance_uid = dataset_source_ct.StudyInstanceUID
+                except Exception:
+                    source_study_instance_uid = None
+                source_series_number = dataset_source_ct.SeriesNumber
+                source_SOP_class_uid = dataset_source_ct.SOPClassUID
+                # if the ct series is not found in the dictionary, add it
+                result = next((item for item in list_all_ct_series if
+                               item["SeriesInstanceNumberUID"] == source_series_instance_uid), None)
+                if result is None:
+                    number_ct_scans +=1
+                    dict_series_folder = {'PatientID:': patient_id,
+                                          "SeriesNumber": source_series_number,
+                                          "SeriesInstanceNumberUID": source_series_instance_uid,
+                                          "SOPClassUID": source_SOP_class_uid,
+                                          "StudyInstanceUID": source_study_instance_uid,
+                                          'Number CT Scans': number_ct_scans,
+                                          }
+                    list_all_ct_series.append(dict_series_folder)
 
     df = pd.DataFrame(data=acquisition_time_list, columns=['Time'], index=range(0, len(acquisition_time_list)))
-    print(len(df))
+    print('number ct scans', number_ct_scans, ' for patient ', patient_id)
     print((df.Time.max() - df.Time.min()))
-    time_duration_procedure = (df.Time.max() - df.Time.min()).total_seconds() / 60
+    try:
+        time_duration_procedure = (df.Time.max() - df.Time.min()).total_seconds() / 60
+    except Exception:
+        time_duration_procedure = None
+        print('not working for patient id:', patient_id)
     dict_pat = {'PatientID:': patient_id,
                 'Number CT Scans': number_ct_scans,
                 'TimeDurationMin': time_duration_procedure
@@ -96,7 +106,16 @@ if __name__ == '__main__':
         patient_id = row.Patient_ID
         frames.append(create_dict_paths_series_dcm(rootdir, ablation_date_redcap, patient_id))
 
-    print(len(frames))
+    #%%
+    print('Length Frames:', len(frames))
     df_final = pd.concat(frames, ignore_index=True)
+    print('Length DataFrame:', len(df_final))
+    filepath ='MAVERRIC_Number_CT_Scans.xlsx'
+    writer = pd.ExcelWriter(filepath)
+    df_final.to_excel(writer, index=False)
+    writer.save()
+
+
+
 
 
