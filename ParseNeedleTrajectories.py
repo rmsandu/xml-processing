@@ -79,7 +79,6 @@ def I_parseRecordingXML(filename):
         except Exception:
             #print("This file could not be parsed with either library ElementTree or Untangle:", filename)
             return None
-
     try:
         patient_id_xml = xmlobj.Eagles.PatientData["patientID"]
     except Exception as e:
@@ -193,7 +192,6 @@ def III_parseTrajectory(trajectories, patient, ct_series, xml_filepath, time_int
                 # individual needle level
                 IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_filepath, time_intervention,
                                 cas_version)
-
             except Exception as e:
                 print('Error when parsing IRE validated in 2018:', repr(e))
                 children_trajectories = xmlTrajectory
@@ -206,7 +204,6 @@ def III_parseTrajectory(trajectories, patient, ct_series, xml_filepath, time_int
                 IV_parseNeedles(children_trajectories, lesion, needle_type, ct_series, xml_filepath, time_intervention,
                                 cas_version)
 
-
         elif (xmlTrajectory['type'] and 'EG_ATOMIC' in xmlTrajectory['type']) :
             # assuming 'EG_ATOMIC_TRAJECTORY' stands for MWA type of needle
             needle_type = "MWA"
@@ -218,7 +215,6 @@ def III_parseTrajectory(trajectories, patient, ct_series, xml_filepath, time_int
             children_trajectories = xmlTrajectory
             IV_parseNeedles(children_trajectories, lesion, needle_type,
                             ct_series, xml_filepath, time_intervention, cas_version)
-
 
         elif not (xmlTrajectory['type'] and 'EG_ATOMIC' in xmlTrajectory['type']):
             # the case when CAS XML Log is old version 2.5

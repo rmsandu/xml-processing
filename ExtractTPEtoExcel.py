@@ -8,7 +8,8 @@ for IRE Angles
 import os
 
 import pandas as pd
-
+import ExtractAreaNeedles
+import ExtractIREAngles
 pd.options.display.float_format = '{:.2f}'.format
 
 
@@ -118,10 +119,49 @@ def customize_dataframe(dfPatientsTrajectories, no_lesions_redcap, list_not_vali
         df_needles_validated.loc[
             (df_needles_validated['PatientID'] == patient), ['LesionNr']] = list_lesion_count_new
         # replace the new lesion count and remove NaNs in the trajectories as well
-        return df_needles_validated
+        return df_needles_validated, list_not_validated
 
 
-def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajectories):
+def compute_area(df):
+    """ Compute Area cm^2 for xyz coordinates.
+    :param df: Dataframe with Needle Trajectories Coordinates (Target Points - xyz)
+    :return: Dataframe with Area [cm^2] between IRE needles
+    """
+    Area_between_needles = []
+    patient_unique = df['PatientID'].unique()
+    for PatientIdx, patient in enumerate(patient_unique):
+        patient_data = df[df['PatientID'] == patient]
+        ExtractAreaNeedles.compute_areas_needles(patient_data, patient, Area_between_needles)
+    df_area_between_needles = pd.DataFrame(Area_between_needles)
+    return df_area_between_needles
+
+
+def compute_angles(df):
+    """ Compute Angles Degrees for Needles
+    :param df: Dataframe with Needle Trajectories Coordinates (Target Points - EntryPoints vectors in 3D)
+    :return: df: Dataframe of Angles (degrees) computed for each needle pair (including reference needle)
+    """
+    Angles = []
+    patient_unique = df['PatientID'].unique()
+    for PatientIdx, patient in enumerate(patient_unique):
+        patient_data = df[df['PatientID'] == patient]
+        ExtractIREAngles.ComputeAnglesTrajectories.FromTrajectoriesToNeedles(patient_data, patient, Angles)
+    df_angles = pd.DataFrame(Angles)
+
+    # convert to dataframe & make columns numerical so Excel operations are allowed
+    df_angles['A_dash'] = '-'
+    df_angles['Electrode Pair'] = df_angles['NeedleA'].astype(str) + df_angles['A_dash'] + df_angles['NeedleB'].astype(
+        str)
+    df_angles = df_angles[['PatientID', 'LesionNr', 'Electrode Pair', 'Planned Angle', 'Validation Angle']]
+    df_angles.sort_values(by=['PatientID', 'LesionNr'], inplace=True)
+    df_angles.apply(pd.to_numeric, errors='ignore', downcast='float').info()
+    # dfAngles_no_nans = dfAngles.dropna(subset=['Validation Angle'], inplace=True)
+
+    return df_angles
+
+
+
+def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajectories, df_angles=None, df_areas=None):
     """
     Write the processed information from DataFrame to Excel
     :param rootdir:
@@ -131,7 +171,6 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
     :param df_areas:
     :return: nothing, writes Excel File to Disk
     """
-    ## write to Excel File
     filename = outfile + '.xlsx'
     filepathExcel = os.path.join(rootdir, filename)
     writer = pd.ExcelWriter(filepathExcel)
@@ -141,4 +180,9 @@ def write_toExcelFile(rootdir, outfile, df_needles_validated, dfPatientsTrajecto
         pass
         print('no needles found to be validated')
     dfPatientsTrajectories.to_excel(writer, sheet_name='Trajectories', index=False, na_rep='NaN')
+    if df_angles is not None:
+        df_angles.to_excel(writer, sheet_name='Angles', index=False, na_rep='NaN')
+    if df_areas is not None:
+        df_areas.to_excel(writer, sheet_name='Areas', index=False, na_rep='NaN')
     writer.save()
+
