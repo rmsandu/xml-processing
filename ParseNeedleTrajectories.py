@@ -35,25 +35,26 @@ def extract_patient_id(filename, patient_id_xml, patient_name_flag=True):
     ix_patient_folder_name = [i for i, s in enumerate(all_paths) if "Pat_" in s]
     try:
         patient_folder_name = all_paths[ix_patient_folder_name[0]]
+        patient_id = re.search("\d", patient_folder_name)  # numerical id
+        ix_patient_id = int(patient_id.start())
+        underscore = re.search("_", patient_folder_name[ix_patient_id:])
+        if underscore is None:
+            ix_underscore = len(patient_folder_name) - 1
+        else:
+            ix_underscore = int(underscore.start())
+        # if no patient id hasn't been found in any of the xmls, replace it
+        if patient_id_xml is None:
+            patient_id_xml = patient_folder_name[ix_patient_id:ix_underscore + ix_patient_id]
+        if patient_name_flag:
+            patient_name = patient_folder_name[0:ix_patient_id]
+        else:
+            patient_name = None
     except Exception as e:
         pass
+        patient_name = 'Undefined patient'
+        patient_id_xml = 'Undefined patient'
        # print(repr(e))
         # error appears generally because an "UndefinedPatient" folder is created everytime when CAS-One IR is opened.
-    patient_id = re.search("\d", patient_folder_name)  # numerical id
-    ix_patient_id = int(patient_id.start())
-    underscore = re.search("_", patient_folder_name[ix_patient_id:])
-    if underscore is None:
-        ix_underscore = len(patient_folder_name) - 1
-    else:
-        ix_underscore = int(underscore.start())
-    # if no patient id hasn't been found in any of the xmls, replace it
-    if patient_id_xml is None:
-        patient_id_xml = patient_folder_name[ix_patient_id:ix_underscore + ix_patient_id]
-    if patient_name_flag:
-        patient_name = patient_folder_name[0:ix_patient_id]
-    else:
-        patient_name = None
-
     return patient_id_xml, patient_name
 
 

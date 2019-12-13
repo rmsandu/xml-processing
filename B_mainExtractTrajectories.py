@@ -107,8 +107,8 @@ if __name__ == '__main__':
                     help="input excel file for batch processing")  # Batch_processing_MAVERRIC.xlsx
     ap.add_argument('-r', "--redcap_file", required=False,
                     help="redcap file for no of antenna insertions")  # redcap_file_all_2019-10-14.xlsx
-    flag_redcap = True
-    flag_MWA = True
+    flag_redcap = False
+    flag_MWA = False
     flag_segmentation_info = False
     outfilename = "tpes"
 
@@ -116,6 +116,7 @@ if __name__ == '__main__':
 
     if args['redcap_file'] is not None:
         print('RedCap File provided for number of lesions treated and no. antenna insertions')
+        df_redcap = pd.read_excel(args['redcap_file'])
     else:
         print('no redcap file provided')
         flag_redcap = False
@@ -127,7 +128,7 @@ if __name__ == '__main__':
         print("no input values provided either for single patient processing or batch processing. System Exiting")
         sys.exit()
 
-    df_redcap = pd.read_excel(args['redcap_file'])
+
 
     # %% BATCH Processing
     if args["input_batch_proc"] is not None:
@@ -137,9 +138,15 @@ if __name__ == '__main__':
         df.drop_duplicates(subset=["Patient_ID"], inplace=True)
         df.reset_index(inplace=True)
         df['Patient_Dir_Paths'].fillna("[]", inplace=True)
-        df['Patient_Dir_Paths'] = df['Patient_Dir_Paths'].apply(literal_eval)
+        try:
+            df['Patient_Dir_Paths'] = df['Patient_Dir_Paths'].apply(literal_eval)
+        except Exception:
+            df['Patient_Dir_Paths'] = df['Patient_Dir_Paths']
         # remove the dash from the PatientName variable
-        df['Patient Name'] = df['Patient Name'].map(lambda x: x.split('-')[0] + x.split('-')[1])
+        try:
+            df['Patient Name'] = df['Patient Name'].map(lambda x: x.split('-')[0] + x.split('-')[1])
+        except Exception:
+            df['Patient Name'] = df['Patient Name']
         for idx in range(len(df)):
             patient_id = str(df["Patient_ID"].iloc[idx])
             patient_name = str(df['Patient Name'].iloc[idx])

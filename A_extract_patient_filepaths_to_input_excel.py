@@ -19,16 +19,14 @@ import pandas as pd
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--input_dir", required=True, help="input patient folder path to be processed")
 ap.add_argument("-b", "--input_csv", required=False, help="input excel file patients info")
-#input_csv C:\develop\xml-processing\XMLProcessing\Batch_processing_MAVERRIC.xlsx
-#input_dir X:\Dropbox (IGT)\MAVERRIC_Groningen\patients_encrypted
 args = vars(ap.parse_args())
 input_dir = args["input_dir"]
 input_csv = args['input_csv']
 df = pd.read_excel(input_csv)
 
 df["Patient Name"] = df['Lesion_ID']
-df["Patient Name"] = df["Patient Name"].map(lambda x: x.partition("-L")[0])
-df["Date_of_Birth"] = df["Date_of_Birth"].map(lambda x: str(x) + "0101")
+# df["Patient Name"] = df["Patient Name"].map(lambda x: x.partition("-L")[0])
+# df["Date_of_Birth"] = df["Date_of_Birth"].map(lambda x: str(x) + "0101")
 # df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.split(":")[2])
 # df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.replace("-", ""))
 # df["Ablation_IR_Date"] = df["Ablation_IR_Date"].map(lambda x: x.replace(" ", ""))
@@ -52,6 +50,6 @@ for patient_id in patient_ids:
 df["Patient_Dir_Paths"] = path_patient_dir_col
 
 df.reset_index(drop=True)
-writer = pd.ExcelWriter("Batch_processing_MAVERRIC.xlsx")
+writer = pd.ExcelWriter("Batch_processing_IRE.xlsx")
 df.to_excel(writer, index=False, float_format='%.4f')
 writer.save()
