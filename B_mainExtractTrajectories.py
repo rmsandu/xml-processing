@@ -217,27 +217,33 @@ if __name__ == '__main__':
                     no_lesions_redcap = row['Number of ablated lesions']
         else:
             no_lesions_redcap = -1
-        df_TPEs_validated = dataframe_metrics.customize_dataframe(df_patients_trajectories,
-                                                                  no_lesions_redcap,
-                                                                  list_not_validated)
-        if flag_MWA:
-            dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
-        if flag_IRE:
-            df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
-            df_areas = df_area_between_needles[
-                ['PatientID', 'LesionNr', 'NeedleCount', 'Planned Area', 'Validation Area']]
-            # %% compute angles between IRE Needles
-            df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
-            dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
-            # write to Excel File...
-            dataframe_metrics.write_toExcelFile(rootdir=rootdir,
-                                                outfile=outfilename,
-                                                df_needles_validated=df_TPEs_validated,
-                                                dfPatientsTrajectories=df_patients_trajectories,
-                                                df_angles=df_angles,
-                                                df_areas=df_areas)
-
-            print('Success! Extracting and Writing Information to the Excel File.....')
+        trajectories_validated = dataframe_metrics.customize_dataframe(
+            df_patients_trajectories,
+            no_lesions_redcap,
+            list_not_validated,
+            flag_IRE=True,
+            flag_MWA=False)
+        if trajectories_validated is not None:
+            df_TPEs_validated = trajectories_validated[0]
+            list_not_validated = trajectories_validated[1]
+            if flag_MWA:
+                dataframe_metrics.write_toExcelFile(rootdir, outfilename, df_TPEs_validated, df_patients_trajectories)
+            if flag_IRE:
+                df_area_between_needles = dataframe_metrics.compute_area(df_TPEs_validated)
+                df_areas = df_area_between_needles[
+                    ['PatientID', 'LesionNr', 'NeedleCount', 'Planned Area', 'Validation Area']]
+                # %% compute angles between IRE Needles
+                df_angles = dataframe_metrics.compute_angles(df_TPEs_validated)
+                # dataframe_metrics.plot_boxplot_angles(df_angles, rootdir)
+                dataframe_metrics.write_toExcelFile(rootdir=rootdir,
+                                                    outfile=outfilename,
+                                                    df_needles_validated=df_TPEs_validated,
+                                                    dfPatientsTrajectories=df_patients_trajectories,
+                                                    df_angles=df_angles,
+                                                    df_areas=df_areas)
+        else:
+            df_TPEs_validated = pd.DataFrame()
+            list_not_validated = pd.DataFrame()
         # write out the needles that weren't validated
         list_not_validated_df = pd.DataFrame(list_not_validated)
         filepath = 'list_patients_not_validated.xlsx'
