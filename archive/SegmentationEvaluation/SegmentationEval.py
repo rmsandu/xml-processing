@@ -145,7 +145,7 @@ for idx, seg in enumerate(segmentations):
     surface_distance_results[0,SurfaceDistanceMeasures.std_deviation.value] = label_intensity_statistics_filter.GetStandardDeviation(label)
     surface_distance_results[0,SurfaceDistanceMeasures.max_surface_distance.value] = label_intensity_statistics_filter.GetMaximum(label)
 
-    ''' Graft our results matrix into pandas data frames '''
+    ''' Graft our results matrix into pandas data frames_TPEs '''
     overlap_results_df = pd.DataFrame(data=overlap_results, index = list(range(1)), 
                                       columns=[name for name, _ in OverlapMeasures.__members__.items()])
      

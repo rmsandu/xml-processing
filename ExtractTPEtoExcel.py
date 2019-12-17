@@ -56,10 +56,10 @@ def customize_dataframe(dfPatientsTrajectories, no_lesions_redcap, list_not_vali
     if flag_IRE is True:
         # keep only validated needles, but also the reference needle
         dfTPEs_validated = dfPatientsTrajectories[
-            (dfPatientsTrajectories.ReferenceNeedle == 1) | (dfPatientsTrajectories.EuclideanError != np.nan)]
-        # remove duplicate values
-        dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
-        dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], keep='last', inplace=True)
+           (dfPatientsTrajectories.EuclideanError != np.nan) |  (dfPatientsTrajectories.ReferenceNeedle == 1)]
+        #TODO remove duplicate values
+        # dfTPEs_validated['PlannedTargetPoint_str'] = dfTPEs_validated['PlannedTargetPoint'].astype(str)
+        # dfTPEs_validated.drop_duplicates(subset=['PlannedTargetPoint_str'], keep='last', inplace=True)
         df_needles_validated = dfTPEs_validated[dfTPEs_validated.NeedleType == 'IRE']
 
     if df_needles_validated.empty:
@@ -90,15 +90,16 @@ def customize_dataframe(dfPatientsTrajectories, no_lesions_redcap, list_not_vali
                 str(no_lesions_redcap) + ' lesions found in RedCap. ' + str(len(df_needles_validated)) +
                 ' needles found validated for this patient:' + dfPatientsTrajectories.iloc[0].PatientID)
     else:
-        df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
-            lambda x: x.split(' ')[0])
-        df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
-            lambda x: x.replace('_', ' '))
-        df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
-            lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
-        most_recent_date = df_needles_validated['TimeDateIntervention'].max()
-        df_needles_validated = df_needles_validated[
-            df_needles_validated['TimeDateIntervention'] == most_recent_date]
+        if flag_MWA is True:
+            df_needles_validated['TimeDateIntervention_Str'] = df_needles_validated['TimeIntervention'].map(
+                lambda x: x.split(' ')[0])
+            df_needles_validated['TimeDateIntervention_Obj'] = df_needles_validated['TimeDateIntervention_Str'].map(
+                lambda x: x.replace('_', ' '))
+            df_needles_validated['TimeDateIntervention'] = df_needles_validated['TimeDateIntervention_Obj'].map(
+                lambda x: datetime.strptime(x, "%Y-%m-%d %H-%M-%S"))
+            most_recent_date = df_needles_validated['TimeDateIntervention'].max()
+            df_needles_validated = df_needles_validated[
+                df_needles_validated['TimeDateIntervention'] == most_recent_date]
 
     # %% Correct the lesion and needle index
     patient_unique = df_needles_validated['PatientID'].unique()

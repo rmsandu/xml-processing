@@ -10,7 +10,7 @@ Created on Mon Jan 7 2019
 - the vertices are described by their Cartesian coordinates in the plane
 
 """
-
+import numpy as np
 import sys
 
 def det(a):
@@ -42,16 +42,16 @@ def dot(a, b):
 
 # cross product of vectors a and b
 def cross(a, b):
+    if a is not None and b is not None:
+        x = a[1] * b[2] - a[2] * b[1]
+        y = a[2] * b[0] - a[0] * b[2]
+        z = a[0] * b[1] - a[1] * b[0]
+        return (x, y, z)
+    else:
+        return None
 
-    x = a[1] * b[2] - a[2] * b[1]
-    y = a[2] * b[0] - a[0] * b[2]
-    z = a[0] * b[1] - a[1] * b[0]
-
-    return (x, y, z)
-
-
-# area of polygon poly
 def area(poly):
+    # area of polygon poly
     if len(poly) < 3:  # not a plane - no area
         return 0
 
@@ -62,12 +62,16 @@ def area(poly):
             vi2 = poly[0]
         else:
             vi2 = poly[i + 1]
+
         prod = cross(vi1, vi2)
-        total[0] += prod[0]
-        total[1] += prod[1]
-        total[2] += prod[2]
-    result = dot(total, unit_normal(poly[0], poly[1], poly[2]))
-    return abs(result / 2)
+        if prod is None:
+            return None
+        else:
+            total[0] += prod[0]
+            total[1] += prod[1]
+            total[2] += prod[2]
+        result = dot(total, unit_normal(poly[0], poly[1], poly[2]))
+        return abs(result / 2)
 
 
 def compute_areas_needles(df_IREs, patientID, Areas_between_needles):
@@ -95,8 +99,14 @@ def compute_areas_needles(df_IREs, patientID, Areas_between_needles):
         ValidationTargetPoint = lesion_data['ValidationTargetPoint'].tolist()
 
         # assume that the target points describe a simple polygon
-        area_planned = area(PlannedTargetPoint) / 100  # convert from mm_square to cm_square divide by 100
-        area_validation = area(ValidationTargetPoint) / 100
+        if area(PlannedTargetPoint) is not None:
+            area_planned = area(PlannedTargetPoint) / 100  # convert from mm_square to cm_square divide by 100
+        else:
+            area_planned = np.nan
+        if area(ValidationTargetPoint) is not None:
+            area_validation = area(ValidationTargetPoint) / 100
+        else:
+            area_validation = np.nan
 
         area_dict = {
             'PatientID': patientID,
